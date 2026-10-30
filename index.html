@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="it">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <title>Acque di Milano</title>
+  <meta name="description" content="Una cartografia interattiva dell'acqua visibile e invisibile di Milano: navigli, fiumi, rogge, fontane, vedovelle, case dell'acqua e piscine.">
+  <meta name="theme-color" content="#f3efe6">
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Cpath d='M16 3C11 11 7 16 7 21a9 9 0 0 0 18 0c0-5-4-10-9-18z' fill='%231c4f8a'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
+  <link href="css/style.css" rel="stylesheet">
+</head>
+<body data-mode="story">
+  <div id="map" aria-label="Mappa"></div>
+
+  <header class="topbar">
+    <a class="brand" href="#racconto">
+      <svg class="brand-mark" viewBox="0 0 32 32" aria-hidden="true"><path d="M16 3C11 11 7 16 7 21a9 9 0 0 0 18 0c0-5-4-10-9-18z"/></svg>
+      <span>
+        <span class="brand-name" data-i18n="brand"></span>
+        <span class="brand-tag" data-i18n="tagline"></span>
+      </span>
+    </a>
+    <nav class="modes" aria-label="Modalità">
+      <a href="#racconto" data-mode="story" data-i18n="mode.story"></a>
+      <a href="#esplora" data-mode="explore" data-i18n="mode.explore"></a>
+      <a href="#deriva" data-mode="drift" data-i18n="mode.drift"></a>
+    </nav>
+    <div class="tools">
+      <div class="lang" role="group" aria-label="Lingua">
+        <button type="button" data-lang="it">IT</button>
+        <button type="button" data-lang="es">ES</button>
+        <button type="button" data-lang="en">EN</button>
+      </div>
+      <button type="button" class="link-btn" id="open-sources" data-i18n="ui.sources"></button>
+    </div>
+  </header>
+
+  <section id="story" class="story" aria-live="polite"></section>
+
+  <aside id="explore" class="panel" hidden>
+    <h2 class="panel-title" data-i18n="ui.layers"></h2>
+    <div id="layer-list"></div>
+  </aside>
+
+  <aside id="drift" class="panel drift" hidden>
+    <p class="kicker">Guy Debord · 1955</p>
+    <h2 class="panel-title display" data-i18n="drift.title"></h2>
+    <p class="drift-intro" data-i18n="drift.intro"></p>
+    <div class="drift-actions">
+      <button type="button" class="btn primary" id="drift-generate"></button>
+      <button type="button" class="btn" id="drift-here" data-i18n="drift.here"></button>
+    </div>
+    <p class="drift-msg" id="drift-msg" hidden></p>
+    <div id="drift-result" hidden>
+      <p class="drift-summary" id="drift-summary"></p>
+      <ol class="drift-stops" id="drift-stops"></ol>
+      <p class="drift-note" data-i18n="drift.note"></p>
+    </div>
+  </aside>
+
+  <article id="card" class="card" hidden>
+    <button type="button" class="card-close" id="card-close" aria-label="Chiudi">×</button>
+    <div id="card-body"></div>
+  </article>
+
+  <dialog id="sources" class="sources">
+    <form method="dialog">
+      <button class="card-close" aria-label="Chiudi">×</button>
+    </form>
+    <h2 class="display" data-i18n="sources.title"></h2>
+    <p data-i18n="sources.intro"></p>
+    <ul class="source-list">
+      <li><strong>Fontanelle (vedovelle)</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds502_fontanelle-nel-comune-di-milano" target="_blank" rel="noopener">ds502</a> · CC BY 4.0</li>
+      <li><strong>Case dell'acqua</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds625-case-dell-acqua-nel-comune-di-milano" target="_blank" rel="noopener">ds625</a> · CC BY 4.0</li>
+      <li><strong>Piscine</strong> · Comune di Milano, impianti sportivi filtrati per nuoto e attività subacquee · <a href="https://dati.comune.milano.it/dataset/ds34_infogeo_impianti_sportivi_localizzazione_" target="_blank" rel="noopener">ds34</a> · CC BY 4.0</li>
+      <li><strong>Fontane</strong> · <a href="https://www.fontanedimilano.it/percorsi/cartografia/" target="_blank" rel="noopener">Fontane di Milano</a></li>
+      <li><strong>Navigli, fiumi, rogge</strong> · Regione Lombardia, Reticolo Idrografico Regionale Unificato · <a href="https://www.geoportale.regione.lombardia.it/" target="_blank" rel="noopener">Geoportale della Lombardia</a></li>
+      <li><strong>Confine comunale</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds2841-confini-amministrativi-del-comune-di-milano" target="_blank" rel="noopener">ds2841</a></li>
+      <li><strong>Mappa di base, corsi d'acqua intubati</strong> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · <a href="https://maplibre.org" target="_blank" rel="noopener">MapLibre</a></li>
+    </ul>
+    <p class="muted" data-i18n="sources.note"></p>
+  </dialog>
+
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

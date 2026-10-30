@@ -1,0 +1,439 @@
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js";
+import { baseStyle, PAPER } from "./basemap.js";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js";
+
+const $ = (s, el = document) => el.querySelector(s);
+const $$ = (s, el = document) => [...el.querySelectorAll(s)];
+const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+const isMobile = () => matchMedia("(max-width: 760px)").matches;
+
+const store = {
+  get(k) { try { return localStorage.getItem(k); } catch { return null; } },
+  set(k, v) { try { localStorage.setItem(k, v); } catch { /* storage non disponibile */ } },
+};
+
+const state = {
+  lang: LANGS.includes(store.get("lang")) ? store.get("lang") : "it",
+  mode: "story",
+  step: 0,
+  explore: Object.fromEntries(LAYERS.map((l) => [l.id, l.visible])),
+  data: {},
+  counts: {},
+  drift: null,
+  selected: null,
+};
+let t = makeT(state.lang);
+
+// Ordine di disegno: dal reticolo minore in basso ai punti in alto.
+const DRAW_ORDER = ["rogge", "fiumi", "nascosta", "memoria", "navigli", "vedovelle", "fontane", "case", "piscine"];
+const byId = Object.fromEntries(LAYERS.map((l) => [l.id, l]));
+const interactiveIds = LAYERS.flatMap((l) => l.mapLayers.filter((m) => m.interactive).map((m) => m.id));
+const layerOfMapLayer = Object.fromEntries(LAYERS.flatMap((l) => l.mapLayers.map((m) => [m.id, l.id])));
+
+// ---------- mappa ----------
+const map = new maplibregl.Map({
+  container: "map",
+  style: baseStyle(),
+  center: STORY[0].camera.center,
+  zoom: STORY[0].camera.zoom,
+  minZoom: 9.5,
+  maxZoom: 18.5,
+  maxBounds: [[8.75, 45.25], [9.6, 45.68]],
+  attributionControl: { compact: true },
+  dragRotate: true,
+});
+map.addControl(new maplibregl.NavigationControl({ visualizePitch: true }), "top-right");
+map.addControl(new maplibregl.ScaleControl({ unit: "metric" }), "bottom-right");
+
+const loader = document.createElement("div");
+loader.className = "loader";
+loader.innerHTML = '<svg viewBox="0 0 32 32"><path d="M16 3C11 11 7 16 7 21a9 9 0 0 0 18 0c0-5-4-10-9-18z"/></svg>';
+document.body.append(loader);
+
+async function loadData() {
+  const files = Object.fromEntries(LAYERS.filter((l) => l.data).map((l) => [l.id, l.data]));
+  files.confine = "data/confine.geojson";
+  const entries = await Promise.all(Object.entries(files).map(async ([k, url]) => [k, await (await fetch(url)).json()]));
+  state.data = Object.fromEntries(entries);
+  for (const l of LAYERS) if (state.data[l.id]) state.counts[l.id] = state.data[l.id].features.length;
+}
+
+function addMask() {
+  // Tutto ciò che sta fuori dal Comune viene velato con il colore della carta.
+  const ring = state.data.confine.features[0].geometry;
+  const holes = ring.type === "Polygon" ? [ring.coordinates[0]] : ring.coordinates.map((p) => p[0]);
+  map.addSource("mask", { type: "geojson", data: { type: "Feature", properties: {},
+    geometry: { type: "Polygon", coordinates: [[[0, 30], [20, 30], [20, 60], [0, 60], [0, 30]], ...holes] } } });
+  map.addSource("confine", { type: "geojson", data: state.data.confine });
+  map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": PAPER.bg, "fill-opacity": 0.6 } }, "road-label");
+  map.addLayer({ id: "confine", type: "line", source: "confine",
+    paint: { "line-color": "#a79f90", "line-width": 1.1, "line-dasharray": [4, 3] } }, "road-label");
+}
+
+function addThematicLayers() {
+  for (const id of DRAW_ORDER) {
+    const cfg = byId[id];
+    const source = cfg.source || `src-${id}`;
+    if (!cfg.source) map.addSource(source, { type: "geojson", data: state.data[id] });
+    const isPoint = ["vedovelle", "fontane", "case", "piscine"].includes(id);
+    for (const ml of cfg.mapLayers) {
+      const { interactive, ...spec } = ml;
+      spec.source = source;
+      spec.layout = { ...(spec.layout || {}), visibility: "none" };
+      map.addLayer(spec, isPoint || spec.type === "symbol" ? undefined : "road-label");
+    }
+  }
+}
+
+function addDriftLayers() {
+  const empty = { type: "FeatureCollection", features: [] };
+  map.addSource("drift-seg", { type: "geojson", data: empty });
+  map.addSource("drift-arrow", { type: "geojson", data: empty });
+  map.addSource("drift-stop", { type: "geojson", data: empty });
+  map.addLayer({ id: "drift-seg-halo", type: "line", source: "drift-seg", layout: { "line-cap": "round" },
+    paint: { "line-color": "#fff", "line-width": 7, "line-opacity": 0.8 } });
+  map.addLayer({ id: "drift-seg", type: "line", source: "drift-seg", layout: { "line-cap": "round" },
+    paint: { "line-color": COLORS.deriva, "line-width": ["interpolate", ["linear"], ["zoom"], 12, 3, 16, 5] } });
+  map.addLayer({ id: "drift-arrow", type: "symbol", source: "drift-arrow",
+    layout: { "icon-image": "arrow", "icon-rotate": ["get", "rot"], "icon-rotation-alignment": "map",
+      "icon-allow-overlap": true, "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.8, 16, 1.2] } });
+  map.addLayer({ id: "drift-stop", type: "circle", source: "drift-stop",
+    paint: { "circle-color": COLORS.deriva, "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 9, 16, 13],
+      "circle-stroke-color": "#fff", "circle-stroke-width": 2.5 } });
+  map.addLayer({ id: "drift-stop-n", type: "symbol", source: "drift-stop",
+    layout: { "text-field": ["get", "n"], "text-font": ["Noto Sans Bold"], "text-size": 12, "text-allow-overlap": true },
+    paint: { "text-color": "#fff" } });
+}
+
+function setDriftVisible(on) {
+  for (const id of ["drift-seg-halo", "drift-seg", "drift-arrow", "drift-stop", "drift-stop-n"]) {
+    if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
+  }
+}
+
+function setLayers(visibleIds) {
+  const on = new Set(visibleIds);
+  for (const cfg of LAYERS) {
+    for (const ml of cfg.mapLayers) {
+      if (map.getLayer(ml.id)) map.setLayoutProperty(ml.id, "visibility", on.has(cfg.id) ? "visible" : "none");
+    }
+  }
+}
+
+function fly(camera) {
+  map.flyTo({ ...camera, duration: reduceMotion ? 0 : 2400, essential: true,
+    padding: isMobile() ? { top: 0, bottom: window.innerHeight * 0.35, left: 0, right: 0 } : { left: 480, top: 0, right: 0, bottom: 0 } });
+}
+
+// ---------- utilità di presentazione ----------
+function swatch(cfg) {
+  const c = COLORS[cfg.id];
+  if (cfg.swatch === "icon") return `<span class="sw icon">${iconSvg(cfg.icon)}</span>`;
+  return `<span class="sw ${cfg.swatch}" style="--c:${c}"></span>`;
+}
+const esc = (s) => String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+const fmt = (n) => new Intl.NumberFormat(state.lang).format(n);
+const countVars = () => Object.fromEntries(Object.entries(state.counts).map(([k, v]) => [k, fmt(v)]));
+
+// ---------- testi statici ----------
+function renderStatic() {
+  document.documentElement.lang = state.lang;
+  $$("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  $$(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));
+  $("#card-close").setAttribute("aria-label", t("ui.close"));
+  $("#drift-generate").textContent = state.drift ? t("drift.again") : t("drift.generate");
+}
+
+// ---------- racconto ----------
+let storyObserver;
+function renderStory() {
+  const el = $("#story");
+  const vars = countVars();
+  el.innerHTML = STORY.map((s, i) => {
+    const tx = s[state.lang] || s.it;
+    const title = i === 0 ? tx.title.replace(/(acqua|agua|water)/i, "<em>$1</em>") : esc(tx.title);
+    const legend = s.final ? "" : s.layers.map((id) => `<span>${swatch(byId[id])}${esc(t("layer." + id))}</span>`).join("");
+    return `<div class="step" data-i="${i}" data-id="${s.id}">
+      <div class="step-card">
+        <p class="kicker">${esc(tx.kicker.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? ""))}</p>
+        <h2>${title}</h2>
+        <p class="body">${esc(tx.body)}</p>
+        ${legend ? `<div class="step-legend">${legend}</div>` : ""}
+        ${i === 0 ? `<div class="scroll-hint">${esc(t("ui.scroll"))}</div>` : ""}
+        ${s.final ? `<div class="step-cta"><a class="btn primary" href="#esplora">${esc(t("ui.toExplore"))}</a><a class="btn drift-btn" href="#deriva">${esc(t("ui.toDrift"))}</a></div>` : ""}
+      </div></div>`;
+  }).join("");
+
+  let prog = $(".story-progress");
+  if (!prog) { prog = document.createElement("div"); prog.className = "story-progress"; document.body.append(prog); }
+  prog.innerHTML = STORY.map((s, i) => `<button type="button" data-i="${i}" aria-label="${i + 1}"></button>`).join("");
+  prog.onclick = (e) => {
+    const b = e.target.closest("button");
+    if (b) $(`.step[data-i="${b.dataset.i}"]`, el).scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+  };
+
+  storyObserver?.disconnect();
+  storyObserver = new IntersectionObserver((entries) => {
+    for (const en of entries) if (en.isIntersecting) activateStep(Number(en.target.dataset.i));
+  }, { root: el, threshold: 0.6 });
+  $$(".step", el).forEach((s) => storyObserver.observe(s));
+  markStep(state.step);
+}
+
+function markStep(i) {
+  $$(".step").forEach((s) => s.classList.toggle("is-active", Number(s.dataset.i) === i));
+  $$(".story-progress button").forEach((b) => b.classList.toggle("is-active", Number(b.dataset.i) === i));
+}
+
+function activateStep(i) {
+  if (state.mode !== "story") return;
+  const changed = i !== state.step;
+  state.step = i;
+  markStep(i);
+  const s = STORY[i];
+  setLayers(s.layers);
+  if (changed || !activateStep.done) fly(s.camera);
+  activateStep.done = true;
+}
+
+// ---------- esplora ----------
+function renderLayerList() {
+  const vars = state.counts;
+  $("#layer-list").innerHTML = GROUPS.map((g) => {
+    const items = LAYERS.filter((l) => l.group === g).map((l) => `
+      <button type="button" class="layer" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}">
+        ${swatch(l)}
+        <span class="name">${esc(t("layer." + l.id))}</span>
+        <span class="count">${l.swatch.startsWith("line") || !vars[l.id] ? "" : fmt(vars[l.id])}</span>
+        <span class="desc">${esc(t("desc." + l.id))}</span>
+      </button>`).join("");
+    return `<div class="group"><h3>${esc(t("group." + g))}</h3>${items}</div>`;
+  }).join("");
+}
+
+$("#layer-list").addEventListener("click", (e) => {
+  const b = e.target.closest(".layer");
+  if (!b) return;
+  const id = b.dataset.layer;
+  state.explore[id] = !state.explore[id];
+  b.setAttribute("aria-pressed", String(state.explore[id]));
+  applyExplore();
+});
+
+function applyExplore() {
+  setLayers(Object.entries(state.explore).filter(([, v]) => v).map(([k]) => k));
+}
+
+// ---------- scheda ----------
+const TYPE_OF = { vedovelle: "vedovella", case: "casa", fontane: "fontana", piscine: "piscina", navigli: "naviglio", fiumi: "fiume", rogge: "roggia", memoria: "memoria", nascosta: "nascosta" };
+
+function cardHTML(layerId, f) {
+  const p = f.properties || {};
+  const type = TYPE_OF[layerId];
+  const head = `<div class="type">${swatch(byId[layerId])}${esc(t("card." + type))}</div>`;
+  const [lon, lat] = f.geometry.type === "Point" ? f.geometry.coordinates : [state.clickLngLat.lng, state.clickLngLat.lat];
+  const dir = `<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${lat},${lon}">${esc(t("ui.directions"))}</a>`;
+  const coords = `<div class="coords">${lat.toFixed(5)}° N · ${lon.toFixed(5)}° E</div>`;
+  const where = [p.nil, p.municipio ? `${t("ui.municipio")} ${p.municipio}` : null].filter(Boolean).join(" · ");
+  switch (layerId) {
+    case "vedovelle":
+      return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.vedovellaText"))}</p><div class="actions">${dir}</div>${coords}`;
+    case "case":
+      return `${head}<h3>${esc(p.nil || t("card.casa"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.casaText"))}</p><div class="actions">${dir}</div>${coords}`;
+    case "fontane": {
+      const tags = [p.monumentale && t("card.monumentale"), p.storica && t("card.storica")].filter(Boolean).map((x) => `<span class="tag">${esc(x)}</span>`).join("");
+      const more = p.url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(p.url)}">${esc(t("ui.more"))} ↗</a>` : "";
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${p.municipio ? esc(`${t("ui.municipio")} ${p.municipio}`) : ""}</p>${tags ? `<div class="tags">${tags}</div>` : ""}<div class="actions">${dir}${more}</div>${coords}`;
+    }
+    case "piscine": {
+      const url = p.url ? (p.url.startsWith("http") ? p.url : `https://${p.url}`) : null;
+      const tags = (p.attivita || "").split(", ").filter(Boolean).map((x) => `<span class="tag">${esc(x)}</span>`).join("");
+      return `${head}<h3>${esc(p.indirizzo || p.nome)}</h3><p class="meta">${esc([p.nome, p.nil].filter(Boolean).join(" · "))}</p>${tags ? `<div class="tags">${tags}</div>` : ""}<div class="actions">${dir}${url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(url)}">${esc(t("ui.website"))} ↗</a>` : ""}</div>${coords}`;
+    }
+    case "memoria":
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc(p.anno)} · ${esc(t("ui.indicative"))}</p><p class="text">${esc(t("card.memoriaText"))}</p>`;
+    case "nascosta":
+      return `${head}<h3>${esc(p.name || p["name:it"] || t("ui.unnamed"))}</h3><p class="text">${esc(t("card.nascostaText"))}</p>`;
+    default:
+      return `${head}<h3>${esc(p.nome || t("ui.unnamed"))}</h3><p class="meta">${esc(t("desc." + layerId))}</p>`;
+  }
+}
+
+function openCard(layerId, f) {
+  state.selected = { layerId, f };
+  $("#card-body").innerHTML = cardHTML(layerId, f);
+  $("#card").hidden = false;
+}
+function closeCard() { state.selected = null; $("#card").hidden = true; }
+$("#card-close").addEventListener("click", closeCard);
+
+const tip = document.createElement("div");
+tip.className = "map-tip";
+tip.hidden = true;
+document.body.append(tip);
+
+function bindMapEvents() {
+  const visibleInteractive = () => interactiveIds.filter((id) => map.getLayer(id) && map.getLayoutProperty(id, "visibility") === "visible");
+  const pick = (point) => {
+    const box = [[point.x - 6, point.y - 6], [point.x + 6, point.y + 6]];
+    const feats = map.queryRenderedFeatures(box, { layers: visibleInteractive() });
+    // i punti hanno la precedenza sulle linee
+    return feats.find((f) => f.geometry.type === "Point") || feats[0];
+  };
+  map.on("click", (e) => {
+    if (state.mode === "story") return;
+    const f = pick(e.point);
+    state.clickLngLat = e.lngLat;
+    if (f) openCard(layerOfMapLayer[f.layer.id], f);
+    else closeCard();
+  });
+  map.on("mousemove", (e) => {
+    if (state.mode === "story") { tip.hidden = true; return; }
+    const f = pick(e.point);
+    map.getCanvas().style.cursor = f ? "pointer" : "";
+    if (!f) { tip.hidden = true; return; }
+    const id = layerOfMapLayer[f.layer.id];
+    const p = f.properties;
+    tip.textContent = p.nome || p.indirizzo || p.name || p.nil || t("layer." + id);
+    tip.style.left = `${e.originalEvent.clientX}px`;
+    tip.style.top = `${e.originalEvent.clientY}px`;
+    tip.hidden = false;
+  });
+  map.on("mouseout", () => { tip.hidden = true; });
+}
+
+// ---------- deriva ----------
+let pool = null;
+function promptFor(type, seed) {
+  const list = (PROMPTS[type] || PROMPTS.naviglio)[state.lang];
+  return list[seed % list.length];
+}
+
+function runDrift(start = null) {
+  pool ||= buildPool(state.data);
+  const route = generateDrift(pool, { start });
+  const geo = driftGeoJSON(route);
+  // consegne in sequenza per tipo, così due tappe uguali non ripetono la stessa frase
+  const counters = {};
+  const seeded = route.map((p) => {
+    counters[p.type] ??= Math.floor(Math.random() * 10);
+    return { ...p, seed: counters[p.type]++ };
+  });
+  state.drift = { route: seeded, total: geo.total };
+  map.getSource("drift-seg").setData(geo.segments);
+  map.getSource("drift-arrow").setData(geo.arrows);
+  map.getSource("drift-stop").setData(geo.stops);
+  setDriftVisible(true);
+  renderDrift();
+  const b = new maplibregl.LngLatBounds();
+  route.forEach((p) => b.extend(p.coord));
+  map.fitBounds(b, { padding: isMobile() ? { top: 130, bottom: window.innerHeight * 0.48, left: 30, right: 50 } : { top: 80, bottom: 80, left: 440, right: 80 },
+    maxZoom: 16, duration: reduceMotion ? 0 : 1800 });
+}
+
+function renderDrift() {
+  $("#drift-generate").textContent = state.drift ? t("drift.again") : t("drift.generate");
+  if (!state.drift) return;
+  const { route, total } = state.drift;
+  const km = (total / 1000).toFixed(1).replace(".", state.lang === "en" ? "." : ",");
+  const min = Math.round((total * 1.25) / 75); // ~4,5 km/h, con un margine per le strade non rettilinee
+  $("#drift-summary").textContent = t("drift.summary", { n: route.length - 1, km, min });
+  $("#drift-stops").innerHTML = route.map((p, i) => {
+    const type = p.type === "start" ? "start" : p.type;
+    const typeLabel = type === "start" ? t("drift.start") : t("card." + type);
+    const prompt = type === "start" ? "" : promptFor(type, p.seed);
+    return `<li data-i="${i}" data-n="${i === 0 ? "●" : i}">
+      <div class="st-type">${esc(typeLabel)}</div>
+      ${p.name ? `<div class="st-name">${esc(p.name)}</div>` : ""}
+      ${prompt ? `<div class="st-prompt">${esc(prompt)}</div>` : ""}
+    </li>`;
+  }).join("");
+  $("#drift-result").hidden = false;
+}
+
+$("#drift-stops").addEventListener("click", (e) => {
+  const li = e.target.closest("li");
+  if (!li || !state.drift) return;
+  const p = state.drift.route[Number(li.dataset.i)];
+  map.flyTo({ center: p.coord, zoom: 17, duration: reduceMotion ? 0 : 1400,
+    padding: isMobile() ? { bottom: window.innerHeight * 0.46 } : { left: 420 } });
+});
+
+$("#drift-generate").addEventListener("click", () => { $("#drift-msg").hidden = true; runDrift(); });
+$("#drift-here").addEventListener("click", () => {
+  const msg = $("#drift-msg");
+  const fallback = (key) => { msg.textContent = t(key); msg.hidden = false; runDrift(); };
+  if (!navigator.geolocation) return fallback("drift.geoError");
+  navigator.geolocation.getCurrentPosition((pos) => {
+    const c = [pos.coords.longitude, pos.coords.latitude];
+    const inside = c[0] > 9.04 && c[0] < 9.28 && c[1] > 45.38 && c[1] < 45.54;
+    if (!inside) return fallback("drift.outside");
+    msg.hidden = true;
+    runDrift(c);
+  }, () => fallback("drift.geoError"), { timeout: 8000 });
+});
+
+// ---------- modalità ----------
+const HASH = { racconto: "story", esplora: "explore", deriva: "drift" };
+
+function setMode(mode) {
+  state.mode = mode;
+  document.body.dataset.mode = mode;
+  $$(".modes a").forEach((a) => (a.dataset.mode === mode ? a.setAttribute("aria-current", "page") : a.removeAttribute("aria-current")));
+  $("#explore").hidden = mode !== "explore";
+  $("#drift").hidden = mode !== "drift";
+  tip.hidden = true;
+  closeCard();
+  if (!state.ready) return;
+  if (mode === "story") {
+    setDriftVisible(false);
+    activateStep.done = false;
+    activateStep(state.step);
+  } else if (mode === "explore") {
+    setDriftVisible(false);
+    applyExplore();
+  } else {
+    setLayers(["navigli", "fiumi", "fontane", "vedovelle", "case", "piscine", "memoria"]);
+    if (state.drift) setDriftVisible(true);
+    else runDrift();
+  }
+}
+
+function onHash() {
+  const mode = HASH[location.hash.replace("#", "")] || "story";
+  setMode(mode);
+}
+window.addEventListener("hashchange", onHash);
+
+$$(".lang button").forEach((b) => b.addEventListener("click", () => {
+  state.lang = b.dataset.lang;
+  store.set("lang", state.lang);
+  t = makeT(state.lang);
+  renderStatic();
+  renderStory();
+  renderLayerList();
+  renderDrift();
+  if (state.selected) openCard(state.selected.layerId, state.selected.f);
+}));
+
+const sources = $("#sources");
+$("#open-sources").addEventListener("click", () => sources.showModal());
+sources.addEventListener("click", (e) => { if (e.target === sources) sources.close(); });
+
+// ---------- avvio ----------
+renderStatic();
+const dataReady = loadData();
+map.on("load", async () => {
+  await Promise.all([dataReady, loadIcons(map)]);
+  addMask();
+  addThematicLayers();
+  addDriftLayers();
+  bindMapEvents();
+  state.ready = true;
+  renderStory();
+  renderLayerList();
+  onHash();
+  loader.classList.add("is-done");
+  setTimeout(() => loader.remove(), 700);
+});
