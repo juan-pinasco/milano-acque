@@ -44,6 +44,10 @@ python3 -m http.server 8000
 
 Poi aprire http://localhost:8000.
 
+## Pubblicare una modifica
+
+I browser conservano CSS e JavaScript per 10 minuti. Dopo ogni modifica, aumentare il numero `?v=` in `index.html` (due volte) e negli `import` in cima a `js/app.js`, così tutti vedono subito la versione nuova.
+
 ## Aggiornare i dati
 
 ```bash
