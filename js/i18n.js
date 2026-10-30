@@ -76,7 +76,7 @@ export const STRINGS = {
     "drift.start": "Partenza",
 
     "sources.title": "Fonti e crediti",
-    "sources.intro": "Mappa interattiva realizzata per una tesi di Laurea Magistrale in Architettura al Politecnico di Milano.",
+    "sources.intro": "Mappa interattiva realizzata per la tesi di Laurea Magistrale in Architettura di Ana Clara Pinasco, Politecnico di Milano.",
     "sources.note": "I tracciati dei navigli coperti sono ricostruiti in modo indicativo a partire dalle strade attuali.",
   },
 
@@ -152,7 +152,7 @@ export const STRINGS = {
     "drift.start": "Salida",
 
     "sources.title": "Fuentes y créditos",
-    "sources.intro": "Mapa interactivo realizado para una tesis de Maestría en Arquitectura en el Politecnico di Milano.",
+    "sources.intro": "Mapa interactivo realizado para la tesis de Maestría en Arquitectura de Ana Clara Pinasco, Politecnico di Milano.",
     "sources.note": "Los trazados de los navigli cubiertos son una reconstrucción aproximada a partir de las calles actuales.",
   },
 
@@ -228,7 +228,7 @@ export const STRINGS = {
     "drift.start": "Start",
 
     "sources.title": "Sources and credits",
-    "sources.intro": "Interactive map made for a Master's thesis in Architecture at the Politecnico di Milano.",
+    "sources.intro": "Interactive map made for Ana Clara Pinasco's Master's thesis in Architecture, Politecnico di Milano.",
     "sources.note": "The routes of the covered Navigli are approximate reconstructions based on today's streets.",
   },
 };

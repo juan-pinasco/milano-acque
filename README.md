@@ -1,6 +1,6 @@
 # Acque di Milano
 
-Cartografia interattiva dell'acqua visibile e invisibile di Milano, realizzata per una tesi di Laurea Magistrale in Architettura al Politecnico di Milano.
+Cartografia interattiva dell'acqua visibile e invisibile di Milano, realizzata per la tesi di Laurea Magistrale in Architettura di **Ana Clara Pinasco**, Politecnico di Milano.
 
 Tre modi di leggere la mappa:
 
