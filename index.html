@@ -26,9 +26,15 @@
       </span>
     </a>
     <nav class="modes" aria-label="Modalità">
-      <a href="#racconto" data-mode="story" data-i18n="mode.story"></a>
-      <a href="#esplora" data-mode="explore" data-i18n="mode.explore"></a>
-      <a href="#deriva" data-mode="drift" data-i18n="mode.drift"></a>
+      <a href="#racconto" data-mode="story">
+        <svg class="mode-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 5.5C6.5 4 9.5 4 12 5.5 14.5 4 17.5 4 20 5.5V19c-2.5-1.5-5.5-1.5-8 0-2.5-1.5-5.5-1.5-8 0Z"/><path d="M12 5.5V19"/></svg>
+        <span data-i18n="mode.story"></span></a>
+      <a href="#esplora" data-mode="explore">
+        <svg class="mode-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3 3 8l9 5 9-5Z"/><path d="m3 12.5 9 5 9-5"/><path d="m3 17 9 5 9-5"/></svg>
+        <span data-i18n="mode.explore"></span></a>
+      <a href="#deriva" data-mode="drift">
+        <svg class="mode-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="5" cy="19" r="2"/><path d="M7 18c4-1 2-6 6-7s5 2 7-4"/><path d="m16.5 6.5 3.5.5-.5 3.5"/></svg>
+        <span data-i18n="mode.drift"></span></a>
     </nav>
     <div class="tools">
       <div class="lang" role="group" aria-label="Lingua">
@@ -36,21 +42,31 @@
         <button type="button" data-lang="es">ES</button>
         <button type="button" data-lang="en">EN</button>
       </div>
-      <button type="button" class="link-btn" id="open-sources" data-i18n="ui.sources"></button>
+      <button type="button" class="link-btn" id="open-sources">
+        <span data-i18n="ui.sources"></span>
+        <svg class="info-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6"/></svg>
+      </button>
     </div>
   </header>
 
   <section id="story" class="story" aria-live="polite"></section>
 
   <aside id="explore" class="panel" hidden>
-    <h2 class="panel-title" data-i18n="ui.layers"></h2>
+    <div class="panel-head">
+      <h2 class="panel-title" data-i18n="ui.layers"></h2>
+      <button type="button" class="sheet-toggle" id="layers-toggle" aria-expanded="false" aria-controls="layer-list"></button>
+    </div>
+    <div class="layer-chips" id="layer-chips"></div>
     <div id="layer-list"></div>
   </aside>
 
   <aside id="drift" class="panel drift" hidden>
     <p class="kicker">Guy Debord · 1955</p>
-    <h2 class="panel-title display" data-i18n="drift.title"></h2>
-    <p class="drift-intro" data-i18n="drift.intro"></p>
+    <div class="drift-head">
+      <h2 class="panel-title display" data-i18n="drift.title"></h2>
+      <button type="button" class="more-btn" id="drift-more" aria-expanded="false" aria-controls="drift-intro"></button>
+    </div>
+    <p class="drift-intro" id="drift-intro" data-i18n="drift.intro"></p>
     <div class="drift-actions">
       <button type="button" class="btn primary" id="drift-generate"></button>
       <button type="button" class="btn" id="drift-here" data-i18n="drift.here"></button>

@@ -84,6 +84,13 @@ function addThematicLayers() {
       map.addLayer(spec, isPoint || spec.type === "symbol" ? undefined : "road-label");
     }
   }
+  if (isMobile()) {
+    // su schermi piccoli i simboli si affollano: più piccoli quando la mappa è lontana
+    for (const id of ["fontane", "case", "piscine"]) {
+      map.setLayoutProperty(id, "icon-size", ["interpolate", ["linear"], ["zoom"], 11, 0.4, 13, 0.6, 15, 0.95]);
+    }
+    map.setPaintProperty("vedovelle", "circle-radius", ["interpolate", ["linear"], ["zoom"], 10, 1.2, 13, 2.4, 16, 5.5]);
+  }
 }
 
 function addDriftLayers() {
@@ -98,6 +105,9 @@ function addDriftLayers() {
   map.addLayer({ id: "drift-arrow", type: "symbol", source: "drift-arrow",
     layout: { "icon-image": "arrow", "icon-rotate": ["get", "rot"], "icon-rotation-alignment": "map",
       "icon-allow-overlap": true, "icon-size": ["interpolate", ["linear"], ["zoom"], 12, 0.8, 16, 1.2] } });
+  map.addLayer({ id: "drift-stop-active", type: "circle", source: "drift-stop", filter: ["==", ["get", "n"], ""],
+    paint: { "circle-color": COLORS.deriva, "circle-opacity": 0.18, "circle-radius": 26,
+      "circle-stroke-color": COLORS.deriva, "circle-stroke-width": 1.5 } });
   map.addLayer({ id: "drift-stop", type: "circle", source: "drift-stop",
     paint: { "circle-color": COLORS.deriva, "circle-radius": ["interpolate", ["linear"], ["zoom"], 12, 9, 16, 13],
       "circle-stroke-color": "#fff", "circle-stroke-width": 2.5 } });
@@ -107,7 +117,7 @@ function addDriftLayers() {
 }
 
 function setDriftVisible(on) {
-  for (const id of ["drift-seg-halo", "drift-seg", "drift-arrow", "drift-stop", "drift-stop-n"]) {
+  for (const id of ["drift-seg-halo", "drift-seg", "drift-arrow", "drift-stop-active", "drift-stop", "drift-stop-n"]) {
     if (map.getLayer(id)) map.setLayoutProperty(id, "visibility", on ? "visible" : "none");
   }
 }
@@ -121,9 +131,25 @@ function setLayers(visibleIds) {
   }
 }
 
+// Su mobile la mappa resta libera tra la barra in alto e il pannello in basso:
+// il margine si calcola su ciò che è davvero visibile in quel momento.
+function mobilePadding() {
+  const top = $(".topbar").getBoundingClientRect().bottom + 16;
+  const sheets = [$(".step.is-active .step-card"), $("#explore"), $("#drift"), $("#card"), $(".modes")]
+    .filter((el) => el && !el.hidden && el.offsetParent !== null)
+    .map((el) => el.getBoundingClientRect().top)
+    .filter((y) => y > top);
+  const sheetTop = sheets.length ? Math.min(...sheets) : window.innerHeight * 0.6;
+  return { top, bottom: Math.max(40, window.innerHeight - sheetTop + 16), left: 24, right: 24 };
+}
+
+// Le inquadrature del racconto sono pensate per ~960 px di mappa: su schermi stretti si allontana.
+const zoomOffset = () => (isMobile() ? Math.min(1.6, Math.max(0, Math.log2(960 / window.innerWidth) * 0.95)) : 0);
+
 function fly(camera) {
   map.flyTo({ ...camera, duration: reduceMotion ? 0 : 2400, essential: true,
-    padding: isMobile() ? { top: 0, bottom: window.innerHeight * 0.35, left: 0, right: 0 } : { left: 480, top: 0, right: 0, bottom: 0 } });
+    zoom: camera.zoom - zoomOffset(),
+    padding: isMobile() ? mobilePadding() : { left: 480, top: 0, right: 0, bottom: 0 } });
 }
 
 // ---------- utilità di presentazione ----------
@@ -143,6 +169,8 @@ function renderStatic() {
   $$(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));
   $("#card-close").setAttribute("aria-label", t("ui.close"));
   $("#drift-generate").textContent = state.drift ? t("drift.again") : t("drift.generate");
+  $("#drift-more").textContent = $("#drift").classList.contains("intro-open") ? t("ui.readLess") : t("ui.readMore");
+  $("#open-sources").setAttribute("aria-label", t("ui.sources"));
 }
 
 // ---------- racconto ----------
@@ -162,15 +190,24 @@ function renderStory() {
         ${legend ? `<div class="step-legend">${legend}</div>` : ""}
         ${i === 0 ? `<div class="scroll-hint">${esc(t("ui.scroll"))}</div>` : ""}
         ${s.final ? `<div class="step-cta"><a class="btn primary" href="#esplora">${esc(t("ui.toExplore"))}</a><a class="btn drift-btn" href="#deriva">${esc(t("ui.toDrift"))}</a></div>` : ""}
+        <div class="step-nav">
+          <button type="button" data-go="${i - 1}" aria-label="${esc(t("ui.prev"))}" ${i === 0 ? "disabled" : ""}>‹</button>
+          <span>${i + 1} / ${STORY.length}${i === 0 ? ` · ${esc(t("ui.swipe"))} →` : ""}</span>
+          <button type="button" data-go="${i + 1}" aria-label="${esc(t("ui.next"))}" ${i === STORY.length - 1 ? "disabled" : ""}>›</button>
+        </div>
       </div></div>`;
   }).join("");
+  el.onclick = (e) => {
+    const b = e.target.closest("[data-go]");
+    if (b) goStep(Number(b.dataset.go));
+  };
 
   let prog = $(".story-progress");
   if (!prog) { prog = document.createElement("div"); prog.className = "story-progress"; document.body.append(prog); }
   prog.innerHTML = STORY.map((s, i) => `<button type="button" data-i="${i}" aria-label="${i + 1}"></button>`).join("");
   prog.onclick = (e) => {
     const b = e.target.closest("button");
-    if (b) $(`.step[data-i="${b.dataset.i}"]`, el).scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth" });
+    if (b) goStep(Number(b.dataset.i));
   };
 
   storyObserver?.disconnect();
@@ -179,6 +216,18 @@ function renderStory() {
   }, { root: el, threshold: 0.6 });
   $$(".step", el).forEach((s) => storyObserver.observe(s));
   markStep(state.step);
+  // dopo un cambio di lingua si resta sulla stessa tappa
+  if (isMobile()) el.scrollTo({ left: state.step * el.clientWidth, behavior: "instant" });
+  else el.scrollTo({ top: $(`.step[data-i="${state.step}"]`, el).offsetTop, behavior: "instant" });
+}
+
+// Su desktop le tappe scorrono in verticale, su mobile di lato.
+function goStep(i) {
+  if (i < 0 || i >= STORY.length) return;
+  const el = $("#story");
+  const behavior = reduceMotion ? "auto" : "smooth";
+  if (isMobile()) el.scrollTo({ left: i * el.clientWidth, behavior });
+  else $(`.step[data-i="${i}"]`, el).scrollIntoView({ behavior });
 }
 
 function markStep(i) {
@@ -210,14 +259,30 @@ function renderLayerList() {
       </button>`).join("");
     return `<div class="group"><h3>${esc(t("group." + g))}</h3>${items}</div>`;
   }).join("");
+  // su mobile: una riga di "chip" da scorrere di lato, sempre a portata di pollice
+  $("#layer-chips").innerHTML = LAYERS.map((l) => `
+    <button type="button" class="chip" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}">${swatch(l)}<span>${esc(t("layer." + l.id))}</span></button>`).join("");
+  updateLayersToggle();
 }
 
-$("#layer-list").addEventListener("click", (e) => {
-  const b = e.target.closest(".layer");
+function updateLayersToggle() {
+  const open = $("#explore").classList.contains("is-open");
+  const b = $("#layers-toggle");
+  b.textContent = open ? t("ui.hide") : t("ui.showAll");
+  b.setAttribute("aria-expanded", String(open));
+}
+
+$("#layers-toggle").addEventListener("click", () => {
+  $("#explore").classList.toggle("is-open");
+  updateLayersToggle();
+});
+
+$("#explore").addEventListener("click", (e) => {
+  const b = e.target.closest("[data-layer]");
   if (!b) return;
   const id = b.dataset.layer;
   state.explore[id] = !state.explore[id];
-  b.setAttribute("aria-pressed", String(state.explore[id]));
+  $$(`#explore [data-layer="${id}"]`).forEach((x) => x.setAttribute("aria-pressed", String(state.explore[id])));
   applyExplore();
 });
 
@@ -264,8 +329,13 @@ function openCard(layerId, f) {
   state.selected = { layerId, f };
   $("#card-body").innerHTML = cardHTML(layerId, f);
   $("#card").hidden = false;
+  document.body.classList.add("has-card");
 }
-function closeCard() { state.selected = null; $("#card").hidden = true; }
+function closeCard() {
+  state.selected = null;
+  $("#card").hidden = true;
+  document.body.classList.remove("has-card");
+}
 $("#card-close").addEventListener("click", closeCard);
 
 const tip = document.createElement("div");
@@ -288,8 +358,9 @@ function bindMapEvents() {
     if (f) openCard(layerOfMapLayer[f.layer.id], f);
     else closeCard();
   });
+  const canHover = matchMedia("(hover: hover)").matches;
   map.on("mousemove", (e) => {
-    if (state.mode === "story") { tip.hidden = true; return; }
+    if (state.mode === "story" || !canHover) { tip.hidden = true; return; }
     const f = pick(e.point);
     map.getCanvas().style.cursor = f ? "pointer" : "";
     if (!f) { tip.hidden = true; return; }
@@ -326,10 +397,28 @@ function runDrift(start = null) {
   map.getSource("drift-stop").setData(geo.stops);
   setDriftVisible(true);
   renderDrift();
+  highlightStop(null);
   const b = new maplibregl.LngLatBounds();
   route.forEach((p) => b.extend(p.coord));
-  map.fitBounds(b, { padding: isMobile() ? { top: 130, bottom: window.innerHeight * 0.48, left: 30, right: 50 } : { top: 80, bottom: 80, left: 440, right: 80 },
+  // fitBounds somma il proprio margine a quello lasciato dall'ultimo flyTo: si azzera prima
+  map.setPadding({ top: 0, right: 0, bottom: 0, left: 0 });
+  map.fitBounds(b, { padding: isMobile() ? mobilePadding() : { top: 80, bottom: 80, left: 440, right: 80 },
     maxZoom: 16, duration: reduceMotion ? 0 : 1800 });
+}
+
+const stopLabel = (i) => (i === 0 ? "●" : String(i));
+
+function highlightStop(i) {
+  if (map.getLayer("drift-stop-active")) map.setFilter("drift-stop-active", ["==", ["get", "n"], i === null ? "" : stopLabel(i)]);
+  $$("#drift-stops li").forEach((li) => li.classList.toggle("is-active", Number(li.dataset.i) === i));
+}
+
+function focusStop(i) {
+  const p = state.drift?.route[i];
+  if (!p) return;
+  highlightStop(i);
+  map.flyTo({ center: p.coord, zoom: 16.5, duration: reduceMotion ? 0 : 1200,
+    padding: isMobile() ? mobilePadding() : { left: 420, top: 0, right: 0, bottom: 0 } });
 }
 
 function renderDrift() {
@@ -343,21 +432,44 @@ function renderDrift() {
     const type = p.type === "start" ? "start" : p.type;
     const typeLabel = type === "start" ? t("drift.start") : t("card." + type);
     const prompt = type === "start" ? "" : promptFor(type, p.seed);
-    return `<li data-i="${i}" data-n="${i === 0 ? "●" : i}">
-      <div class="st-type">${esc(typeLabel)}</div>
+    return `<li data-i="${i}" data-n="${stopLabel(i)}">
+      <div class="st-type">${esc(typeLabel)} <span class="st-count">${i + 1} / ${route.length}</span></div>
       ${p.name ? `<div class="st-name">${esc(p.name)}</div>` : ""}
       ${prompt ? `<div class="st-prompt">${esc(prompt)}</div>` : ""}
     </li>`;
   }).join("");
   $("#drift-result").hidden = false;
+  observeStops();
+}
+
+// Su mobile le tappe sono schede da scorrere di lato: quella al centro guida la mappa.
+let stopObserver;
+function observeStops() {
+  const list = $("#drift-stops");
+  stopObserver?.disconnect();
+  list.scrollLeft = 0;
+  list.dataset.touched = "";
+  if (!isMobile()) return;
+  stopObserver = new IntersectionObserver((entries) => {
+    if (!list.dataset.touched) return; // all'inizio si vede tutto il percorso
+    for (const en of entries) if (en.isIntersecting) focusStop(Number(en.target.dataset.i));
+  }, { root: list, threshold: 0.75 });
+  $$("li", list).forEach((li) => stopObserver.observe(li));
+}
+for (const ev of ["pointerdown", "touchstart", "wheel"]) {
+  $("#drift-stops").addEventListener(ev, (e) => { e.currentTarget.dataset.touched = "1"; }, { passive: true });
 }
 
 $("#drift-stops").addEventListener("click", (e) => {
   const li = e.target.closest("li");
   if (!li || !state.drift) return;
-  const p = state.drift.route[Number(li.dataset.i)];
-  map.flyTo({ center: p.coord, zoom: 17, duration: reduceMotion ? 0 : 1400,
-    padding: isMobile() ? { bottom: window.innerHeight * 0.46 } : { left: 420 } });
+  focusStop(Number(li.dataset.i));
+});
+
+$("#drift-more").addEventListener("click", () => {
+  const open = $("#drift").classList.toggle("intro-open");
+  $("#drift-more").textContent = open ? t("ui.readLess") : t("ui.readMore");
+  $("#drift-more").setAttribute("aria-expanded", String(open));
 });
 
 $("#drift-generate").addEventListener("click", () => { $("#drift-msg").hidden = true; runDrift(); });
@@ -434,6 +546,8 @@ map.on("load", async () => {
   renderStory();
   renderLayerList();
   onHash();
+  // su mobile i crediti partono chiusi nel pulsante ⓘ
+  if (isMobile()) $(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
   loader.classList.add("is-done");
   setTimeout(() => loader.remove(), 700);
 });
