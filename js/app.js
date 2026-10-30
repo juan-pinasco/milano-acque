@@ -146,9 +146,9 @@ function mobilePadding() {
 // Le inquadrature del racconto sono pensate per ~960 px di mappa: su schermi stretti si allontana.
 const zoomOffset = () => (isMobile() ? Math.min(1.6, Math.max(0, Math.log2(960 / window.innerWidth) * 0.95)) : 0);
 
-function fly(camera) {
+function fly(camera, minZoom = 0) {
   map.flyTo({ ...camera, duration: reduceMotion ? 0 : 2400, essential: true,
-    zoom: camera.zoom - zoomOffset(),
+    zoom: Math.max(minZoom, camera.zoom - zoomOffset()),
     padding: isMobile() ? mobilePadding() : { left: 480, top: 0, right: 0, bottom: 0 } });
 }
 
@@ -166,6 +166,7 @@ const countVars = () => Object.fromEntries(Object.entries(state.counts).map(([k,
 function renderStatic() {
   document.documentElement.lang = state.lang;
   $$("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
+  updateCollapseButtons();
   $$(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));
   $("#card-close").setAttribute("aria-label", t("ui.close"));
   $("#drift-generate").textContent = state.drift ? t("drift.again") : t("drift.generate");
@@ -184,6 +185,7 @@ function renderStory() {
     const legend = s.final ? "" : s.layers.map((id) => `<span>${swatch(byId[id])}${esc(t("layer." + id))}</span>`).join("");
     return `<div class="step" data-i="${i}" data-id="${s.id}">
       <div class="step-card">
+        <button type="button" class="sheet-collapse" aria-expanded="true"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 9 6 6 6-6"/></svg></button>
         <p class="kicker">${esc(tx.kicker.replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? ""))}</p>
         <h2>${title}</h2>
         <p class="body">${esc(tx.body)}</p>
@@ -216,6 +218,7 @@ function renderStory() {
   }, { root: el, threshold: 0.6 });
   $$(".step", el).forEach((s) => storyObserver.observe(s));
   markStep(state.step);
+  updateCollapseButtons();
   // dopo un cambio di lingua si resta sulla stessa tappa
   if (isMobile()) el.scrollTo({ left: state.step * el.clientWidth, behavior: "instant" });
   else el.scrollTo({ top: $(`.step[data-i="${state.step}"]`, el).offsetTop, behavior: "instant" });
@@ -242,7 +245,7 @@ function activateStep(i) {
   markStep(i);
   const s = STORY[i];
   setLayers(s.layers);
-  if (changed || !activateStep.done) fly(s.camera);
+  if (changed || !activateStep.done) fly(s.camera, s.minZoom);
   activateStep.done = true;
 }
 
@@ -484,6 +487,24 @@ $("#drift-here").addEventListener("click", () => {
     msg.hidden = true;
     runDrift(c);
   }, () => fallback("drift.geoError"), { timeout: 8000 });
+});
+
+// ---------- pannelli riducibili (mobile) ----------
+// Un solo stato per tutti i pannelli: se lo riduci in una modalità, resta ridotto anche nelle altre.
+function updateCollapseButtons() {
+  const collapsed = document.body.classList.contains("sheets-collapsed");
+  $$(".sheet-collapse").forEach((b) => {
+    b.setAttribute("aria-expanded", String(!collapsed));
+    b.setAttribute("aria-label", t(collapsed ? "ui.expand" : "ui.collapse"));
+  });
+}
+
+document.addEventListener("click", (e) => {
+  if (!e.target.closest(".sheet-collapse")) return;
+  document.body.classList.toggle("sheets-collapsed");
+  updateCollapseButtons();
+  // la mappa si ricentra sullo spazio liberato (o occupato) dal pannello
+  if (isMobile() && state.ready) map.easeTo({ padding: mobilePadding(), duration: reduceMotion ? 0 : 450 });
 });
 
 // ---------- modalità ----------
