@@ -94,7 +94,8 @@ def main():
         dest = OUT / f
         dest.parent.mkdir(parents=True, exist_ok=True)
         dest.write_text(strip_versions((ROOT / f).read_text()))
-    shutil.copytree(ROOT / "data", OUT / "data", dirs_exist_ok=True)
+    shutil.rmtree(OUT / "data", ignore_errors=True)  # niente file di dati vecchi
+    shutil.copytree(ROOT / "data", OUT / "data")
     fetch_to(MAPLIBRE_CSS, OUT / "css/maplibre-gl.css")
 
     print("Caratteri delle etichette…")
