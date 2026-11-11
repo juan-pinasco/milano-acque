@@ -1,15 +1,18 @@
+/* Tema notturno: pannelli di vetro scuro sopra la mappa satellitare */
 :root {
-  --paper: #f3efe6;
-  --paper-2: #faf8f3;
-  --ink: #23272b;
-  --ink-2: #5a5e62;
-  --ink-3: #8b8f92;
-  --rule: #ddd6c8;
-  --water: #1c4f8a;
-  --water-2: #3b78b8;
-  --water-soft: #dbe7f0;
-  --drift: #e0452b;
-  --shadow: 0 1px 2px rgba(35, 39, 43, .06), 0 8px 28px rgba(35, 39, 43, .10);
+  color-scheme: dark;
+  --paper: #071820;
+  --paper-2: #0b212b;
+  --ink: #e2f2f6;
+  --ink-2: #a3c0c9;
+  --ink-3: #6f909b;
+  --rule: #1d3a46;
+  --water: #5fd8ff;
+  --water-2: #3fb0e0;
+  --water-soft: rgba(95, 216, 255, .13);
+  --hover: rgba(160, 225, 245, .08);
+  --drift: #ff6b4a;
+  --shadow: 0 1px 2px rgba(0, 0, 0, .3), 0 10px 32px rgba(0, 0, 0, .45);
   --radius: 14px;
   --display: "Fraunces", Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
@@ -46,7 +49,7 @@ button { font: inherit; color: inherit; cursor: pointer; }
 }
 .topbar > * { pointer-events: auto; }
 
-.modes { display: flex; gap: 2px; margin: 0 auto; background: rgba(35,39,43,.05); padding: 3px; border-radius: 999px; }
+.modes { display: flex; gap: 2px; margin: 0 auto; background: var(--hover); padding: 3px; border-radius: 999px; }
 .modes a {
   padding: 6px 16px; border-radius: 999px; text-decoration: none;
   color: var(--ink-2); font-weight: 500; font-size: 14px; transition: background .2s, color .2s;
@@ -115,7 +118,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 }
 .btn:hover { background: var(--ink); color: var(--paper); }
 .btn.primary { background: var(--ink); color: var(--paper); }
-.btn.primary:hover { background: #000; }
+.btn.primary:hover { filter: brightness(1.1); }
 .btn.drift-btn { border-color: var(--drift); color: var(--drift); }
 .btn.drift-btn:hover { background: var(--drift); color: #fff; }
 .drift .btn.primary { background: var(--drift); border-color: var(--drift); color: #fff; }
@@ -140,7 +143,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   width: 100%; padding: 9px 10px; margin: 0 -10px; border: 0; border-radius: 10px; background: none; text-align: left;
   transition: background .15s, opacity .2s;
 }
-.layer:hover { background: rgba(35,39,43,.045); }
+.layer:hover { background: var(--hover); }
 .layer .name { font-weight: 500; font-size: 14.5px; }
 .layer .count { font: 12px var(--mono); color: var(--ink-3); }
 .layer .desc { grid-column: 2 / 4; font-size: 12.5px; color: var(--ink-2); line-height: 1.4; }
@@ -152,7 +155,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .sw.line-thin { height: 2px; background: var(--c); opacity: .85; }
 .sw.line-dash { height: 0; border-top: 3px dashed var(--c); }
 .sw.line-dot { height: 0; border-top: 3px dotted var(--c); }
-.sw.dot { width: 10px; height: 10px; margin: 0 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px #fff; }
+.sw.dot { width: 10px; height: 10px; margin: 0 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px var(--paper), 0 0 6px var(--c); }
 .sw.icon { width: 22px; height: 22px; }
 .sw.icon svg { width: 100%; height: 100%; display: block; }
 
@@ -165,7 +168,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 }
 @keyframes rise { from { opacity: 0; transform: translateY(8px); } }
 .card-close { position: absolute; top: 8px; right: 10px; width: 32px; height: 32px; border: 0; background: none; font-size: 22px; color: var(--ink-3); border-radius: 50%; }
-.card-close:hover { background: rgba(35,39,43,.06); color: var(--ink); }
+.card-close:hover { background: var(--hover); color: var(--ink); }
 .card .type { display: flex; align-items: center; gap: 8px; font: 500 11px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-2); margin-bottom: 8px; }
 .card .type .sw { width: 16px; height: 16px; }
 .card .type .sw.dot { width: 9px; height: 9px; margin: 0 3px; }
@@ -203,7 +206,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   border: 1px solid var(--rule); border-radius: var(--radius); background: var(--paper-2); color: var(--ink);
   padding: 28px 30px; box-shadow: var(--shadow);
 }
-.sources::backdrop { background: rgba(35,39,43,.35); }
+.sources::backdrop { background: rgba(1, 8, 12, .6); }
 .sources h2 { margin: 0 0 10px; font-size: 28px; }
 .sources form { position: absolute; top: 8px; right: 10px; }
 .sources form .card-close { position: static; }
@@ -214,6 +217,11 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .maplibregl-ctrl-group { border-radius: 10px !important; box-shadow: var(--shadow) !important; background: var(--paper-2) !important; }
 .maplibregl-ctrl-attrib { font-size: 10.5px; background: color-mix(in srgb, var(--paper) 80%, transparent) !important; }
 .maplibregl-ctrl-top-right { top: 60px; }
+.maplibregl-ctrl-group button + button { border-top-color: var(--rule) !important; }
+.maplibregl-ctrl-group .maplibregl-ctrl-icon { filter: invert(1) hue-rotate(180deg) brightness(.9); }
+.maplibregl-ctrl-attrib, .maplibregl-ctrl-attrib a { color: var(--ink-2) !important; }
+.maplibregl-ctrl-attrib-button { filter: invert(1); }
+.maplibregl-ctrl-scale { background: transparent !important; color: var(--ink-2) !important; border-color: var(--ink-3) !important; }
 .map-tip {
   position: fixed; z-index: 16; pointer-events: none; transform: translate(12px, -50%);
   background: var(--ink); color: var(--paper); font-size: 12.5px; padding: 4px 9px; border-radius: 6px; white-space: nowrap;
@@ -255,9 +263,9 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 #explore .sheet-collapse {
   display: grid; place-items: center; flex: none;
   width: 34px; height: 34px; margin: -6px -6px -6px 2px; padding: 0;
-  border: 0; border-radius: 50%; background: rgba(35, 39, 43, .05); color: var(--ink-2);
+  border: 0; border-radius: 50%; background: var(--hover); color: var(--ink-2);
 }
-#explore .sheet-collapse:hover { background: rgba(35, 39, 43, .1); color: var(--ink); }
+#explore .sheet-collapse:hover { background: var(--water-soft); color: var(--ink); }
 .sheet-collapse svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
 .sheets-collapsed .sheet-collapse svg { transform: rotate(180deg); }
 .sheets-collapsed #explore .layer-chips,
@@ -303,7 +311,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
     position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; margin: 0;
     height: var(--nav); padding: 6px 8px env(safe-area-inset-bottom);
     border-radius: 0; background: var(--paper-2); border-top: 1px solid var(--rule);
-    box-shadow: 0 -4px 18px rgba(35, 39, 43, .06);
+    box-shadow: 0 -4px 18px rgba(0, 0, 0, .4);
     gap: 0;
   }
   .modes a {
@@ -353,7 +361,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
     top: auto; left: 0; right: 0; bottom: var(--nav); width: auto;
     max-height: 62vh; border-radius: 18px 18px 0 0; border-bottom: 0;
     padding: 12px 14px 12px;
-    box-shadow: 0 -6px 24px rgba(35, 39, 43, .10);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, .4);
   }
   .panel::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--rule); margin: -4px auto 8px; }
   body.has-card .panel { display: none; }
@@ -397,7 +405,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   .sheet-collapse {
     display: grid; place-items: center; flex: none;
     width: 34px; height: 34px; margin: -6px -6px -6px 2px; padding: 0;
-    border: 0; border-radius: 50%; background: rgba(35, 39, 43, .05); color: var(--ink-2);
+    border: 0; border-radius: 50%; background: var(--hover); color: var(--ink-2);
   }
   .step-card .sheet-collapse { position: absolute; top: 10px; right: 10px; margin: 0; }
   .step-card { position: relative; }
@@ -421,7 +429,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
     left: 0; right: 0; bottom: var(--nav); width: auto; max-width: none;
     max-height: 55vh; overflow-y: auto;
     border-radius: 18px 18px 0 0; border-bottom: 0; padding: 18px 18px 16px;
-    box-shadow: 0 -6px 24px rgba(35, 39, 43, .12);
+    box-shadow: 0 -6px 24px rgba(0, 0, 0, .4);
   }
   .card h3 { font-size: 21px; }
 }

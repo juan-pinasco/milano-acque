@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=11";
-import { baseStyle, PAPER, registerLocalBasemap } from "./basemap.js?v=11";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=11";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=11";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=12";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=12";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=12";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=12";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -69,15 +69,15 @@ async function loadData() {
 }
 
 function addMask() {
-  // Tutto ciò che sta fuori dal Comune viene velato con il colore della carta.
+  // Tutto ciò che sta fuori dal Comune viene velato di scuro.
   const ring = state.data.confine.features[0].geometry;
   const holes = ring.type === "Polygon" ? [ring.coordinates[0]] : ring.coordinates.map((p) => p[0]);
   map.addSource("mask", { type: "geojson", data: { type: "Feature", properties: {},
     geometry: { type: "Polygon", coordinates: [[[0, 30], [20, 30], [20, 60], [0, 60], [0, 30]], ...holes] } } });
   map.addSource("confine", { type: "geojson", data: state.data.confine });
-  map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": PAPER.bg, "fill-opacity": 0.6 } }, "road-label");
+  map.addLayer({ id: "mask", type: "fill", source: "mask", paint: { "fill-color": NIGHT.mask, "fill-opacity": 0.62 } }, "road-label");
   map.addLayer({ id: "confine", type: "line", source: "confine",
-    paint: { "line-color": "#a79f90", "line-width": 1.1, "line-dasharray": [4, 3] } }, "road-label");
+    paint: { "line-color": NIGHT.street, "line-opacity": 0.45, "line-width": 1.1, "line-dasharray": [4, 3] } }, "road-label");
 }
 
 function addThematicLayers() {
