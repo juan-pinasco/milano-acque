@@ -14,7 +14,7 @@
   --display: "Fraunces", Georgia, serif;
   --sans: "Inter", system-ui, -apple-system, "Segoe UI", sans-serif;
   --mono: "IBM Plex Mono", ui-monospace, monospace;
-  --top: 64px;
+  --top: 0px;
   --panel-w: 380px;
 }
 
@@ -38,20 +38,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 
 #map { position: fixed; inset: 0; }
 
-/* ---------- barra superiore ---------- */
+/* ---------- comandi flottanti in alto a destra ---------- */
 .topbar {
-  position: fixed; top: 0; left: 0; right: 0; z-index: 20;
-  height: var(--top);
-  display: flex; align-items: center; gap: 24px;
-  padding: 0 20px;
-  background: color-mix(in srgb, var(--paper) 88%, transparent);
-  backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
-  border-bottom: 1px solid var(--rule);
+  position: fixed; top: 16px; right: 16px; z-index: 20;
+  display: flex; align-items: center; gap: 12px;
+  pointer-events: none;
 }
-.brand { display: flex; align-items: center; gap: 10px; text-decoration: none; color: var(--ink); min-width: 0; }
-.brand-mark { width: 26px; height: 26px; fill: var(--water); flex: none; }
-.brand-name { display: block; font: 600 19px/1.1 var(--display); font-variation-settings: "opsz" 48; letter-spacing: -.01em; }
-.brand-tag { display: block; font-size: 12px; color: var(--ink-2); font-style: italic; font-family: var(--display); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.topbar > * { pointer-events: auto; }
 
 .modes { display: flex; gap: 2px; margin: 0 auto; background: rgba(35,39,43,.05); padding: 3px; border-radius: 999px; }
 .modes a {
@@ -62,7 +55,13 @@ button { font: inherit; color: inherit; cursor: pointer; }
 .modes a[aria-current="page"] { background: var(--paper-2); color: var(--ink); box-shadow: 0 1px 3px rgba(0,0,0,.08); }
 .modes a[data-mode="drift"][aria-current="page"] { color: var(--drift); }
 
-.tools { display: flex; align-items: center; gap: 14px; margin-left: auto; }
+.tools {
+  display: flex; align-items: center; gap: 12px;
+  padding: 5px 14px 5px 5px; border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-2) 92%, transparent);
+  backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);
+  border: 1px solid var(--rule); box-shadow: var(--shadow);
+}
 /* con una sola modalità attiva la barra delle schede non serve */
 body.single-mode .modes { display: none !important; }
 .lang { display: flex; border: 1px solid var(--rule); border-radius: 999px; overflow: hidden; }
@@ -214,7 +213,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 /* ---------- MapLibre ---------- */
 .maplibregl-ctrl-group { border-radius: 10px !important; box-shadow: var(--shadow) !important; background: var(--paper-2) !important; }
 .maplibregl-ctrl-attrib { font-size: 10.5px; background: color-mix(in srgb, var(--paper) 80%, transparent) !important; }
-.maplibregl-ctrl-top-right { top: calc(var(--top) + 8px); }
+.maplibregl-ctrl-top-right { top: 60px; }
 .map-tip {
   position: fixed; z-index: 16; pointer-events: none; transform: translate(12px, -50%);
   background: var(--ink); color: var(--paper); font-size: 12.5px; padding: 4px 9px; border-radius: 6px; white-space: nowrap;
@@ -233,19 +232,14 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 /* ---------- mobile ---------- */
 @media (max-width: 760px) {
   :root {
-    --top: 52px;
+    --top: 0px;
     --nav: calc(60px + env(safe-area-inset-bottom));
   }
   body.single-mode { --nav: env(safe-area-inset-bottom, 0px); }
 
   /* barra superiore: una sola riga */
-  /* senza backdrop-filter: altrimenti la barra delle modalità resterebbe "intrappolata" dentro */
-  .topbar { height: var(--top); padding: 0 12px 0 14px; gap: 10px; backdrop-filter: none; -webkit-backdrop-filter: none; background: var(--paper-2); }
-  .brand { flex: 1; gap: 8px; }
-  .brand-mark { width: 20px; height: 20px; }
-  .brand-name { font-size: 17px; white-space: nowrap; }
-  .brand-tag { display: none; }
-  .tools { gap: 6px; }
+  .topbar { top: 12px; right: 12px; }
+  .tools { gap: 4px; padding: 4px; }
   .lang button { padding: 4px 7px; font-size: 11px; }
   #open-sources > span { display: none; }
   .info-ic { display: block; width: 24px; height: 24px; fill: none; stroke: var(--ink-2); stroke-width: 1.6; stroke-linecap: round; }
@@ -270,7 +264,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   /* mappa: niente pulsanti di zoom, crediti in alto */
   .maplibregl-ctrl-top-right .maplibregl-ctrl-group { display: none; }
   .maplibregl-ctrl-scale { display: none; }
-  .maplibregl-ctrl-bottom-right { top: calc(var(--top) + 6px); bottom: auto; }
+  .maplibregl-ctrl-bottom-right { top: 56px; bottom: auto; }
 
   /* racconto: schede in basso, da scorrere di lato */
   .story {
