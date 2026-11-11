@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=9";
-import { baseStyle, PAPER } from "./basemap.js?v=9";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=9";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=9";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=10";
+import { baseStyle, PAPER } from "./basemap.js?v=10";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=10";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=10";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -11,7 +11,10 @@ const isMobile = () => matchMedia("(max-width: 760px)").matches;
 // Modalità attive. Per riattivare il racconto o la deriva basta aggiungerle qui:
 // ["story", "explore", "drift"]. Con una sola modalità la barra delle schede sparisce.
 const MODES = ["explore"];
-const EXPLORE_CAMERA = { center: [9.19, 45.466], zoom: 12.6 };
+const EXPLORE_CAMERA = { center: [9.19, 45.466], zoom: 12.3 };
+// Zona visibile: Milano e la prima cintura (da Rho a Segrate, da Bollate a Opera).
+// La mappa non si può spostare né allontanare oltre questo rettangolo.
+const AREA = [[8.98, 45.34], [9.4, 45.57]];
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -42,9 +45,9 @@ const map = new maplibregl.Map({
   style: baseStyle(),
   center: (MODES[0] === "story" ? STORY[0].camera : EXPLORE_CAMERA).center,
   zoom: (MODES[0] === "story" ? STORY[0].camera : EXPLORE_CAMERA).zoom - (isMobile() ? 1 : 0),
-  minZoom: 9.5,
+  minZoom: 10,
   maxZoom: 18.5,
-  maxBounds: [[8.75, 45.25], [9.6, 45.68]],
+  maxBounds: AREA,
   attributionControl: { compact: true },
   dragRotate: true,
 });
