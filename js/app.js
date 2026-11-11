@@ -1,12 +1,17 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=4";
-import { baseStyle, PAPER } from "./basemap.js?v=4";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=4";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=4";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=5";
+import { baseStyle, PAPER } from "./basemap.js?v=5";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=5";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=5";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
 const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
 const isMobile = () => matchMedia("(max-width: 760px)").matches;
+
+// Modalità attive. Per riattivare il racconto o la deriva basta aggiungerle qui:
+// ["story", "explore", "drift"]. Con una sola modalità la barra delle schede sparisce.
+const MODES = ["explore"];
+const EXPLORE_CAMERA = { center: [9.19, 45.466], zoom: 12.3 };
 
 const store = {
   get(k) { try { return localStorage.getItem(k); } catch { return null; } },
@@ -35,8 +40,8 @@ const layerOfMapLayer = Object.fromEntries(LAYERS.flatMap((l) => l.mapLayers.map
 const map = new maplibregl.Map({
   container: "map",
   style: baseStyle(),
-  center: STORY[0].camera.center,
-  zoom: STORY[0].camera.zoom,
+  center: (MODES[0] === "story" ? STORY[0].camera : EXPLORE_CAMERA).center,
+  zoom: (MODES[0] === "story" ? STORY[0].camera : EXPLORE_CAMERA).zoom - (isMobile() ? 1 : 0),
   minZoom: 9.5,
   maxZoom: 18.5,
   maxBounds: [[8.75, 45.25], [9.6, 45.68]],
@@ -177,6 +182,7 @@ function renderStatic() {
 // ---------- racconto ----------
 let storyObserver;
 function renderStory() {
+  if (!MODES.includes("story")) return;
   const el = $("#story");
   const vars = countVars();
   el.innerHTML = STORY.map((s, i) => {
@@ -534,8 +540,8 @@ function setMode(mode) {
 }
 
 function onHash() {
-  const mode = HASH[location.hash.replace("#", "")] || "story";
-  setMode(mode);
+  const mode = HASH[location.hash.replace("#", "")];
+  setMode(MODES.includes(mode) ? mode : MODES[0]);
 }
 window.addEventListener("hashchange", onHash);
 
@@ -555,6 +561,9 @@ $("#open-sources").addEventListener("click", () => sources.showModal());
 sources.addEventListener("click", (e) => { if (e.target === sources) sources.close(); });
 
 // ---------- avvio ----------
+$$(".modes a").forEach((a) => { a.hidden = !MODES.includes(a.dataset.mode); });
+document.body.classList.toggle("single-mode", MODES.length === 1);
+document.body.dataset.mode = MODES[0];
 renderStatic();
 const dataReady = loadData();
 map.on("load", async () => {
@@ -567,6 +576,11 @@ map.on("load", async () => {
   renderStory();
   renderLayerList();
   onHash();
+  // la vista iniziale si centra sulla parte di mappa non coperta dal pannello
+  if (MODES[0] === "explore") {
+    map.jumpTo({ center: EXPLORE_CAMERA.center, zoom: EXPLORE_CAMERA.zoom - (isMobile() ? 1 : 0),
+      padding: isMobile() ? mobilePadding() : { top: 0, right: 0, bottom: 0, left: 380 } });
+  }
   // su mobile i crediti partono chiusi nel pulsante ⓘ
   if (isMobile()) $(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");
   loader.classList.add("is-done");
