@@ -4,16 +4,17 @@
 
 // Colori luminosi su fondo notturno: l'acqua corrente in celeste, ogni tipo di punto con la sua luce.
 export const COLORS = {
-  fiumi: "#62dcff",
-  fontanili: "#c2f3ff",
-  canali: "#4c9dff",
-  memoria: "#dff7ff",
-  laghi: "#3fc1e6",
-  fontane: "#ffc860",
-  piscine: "#a99dff",
-  piscineChiuse: "#5d7480",
-  case: "#35e6d2",
-  vedovelle: "#6ff0b4",
+  // tutto nella famiglia dell'acqua: celesti, azzurri, blu, turchesi e verde acqua
+  fiumi: "#4fd2ff",          // celeste brillante
+  fontanili: "#d2f7ff",      // celeste ghiaccio: l'acqua che nasce
+  canali: "#2f7dff",         // azzurro intenso
+  memoria: "#e6f9ff",
+  laghi: "#1a9fc4",          // blu petrolio
+  fontane: "#9ad8ff",        // celeste cielo
+  piscine: "#5a6bff",        // blu oltremare, il colore delle vasche
+  piscineChiuse: "#4f6873",  // grigio azzurro
+  case: "#12b8a6",           // turchese profondo
+  vedovelle: "#8ef5e4",      // verde acqua chiaro
   deriva: "#ff6b4a",
 };
 // contorno scuro dei simboli e alone delle etichette
