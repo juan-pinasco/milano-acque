@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=10";
-import { baseStyle, PAPER } from "./basemap.js?v=10";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=10";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=10";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=11";
+import { baseStyle, PAPER, registerLocalBasemap } from "./basemap.js?v=11";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=11";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=11";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -40,6 +40,7 @@ const interactiveIds = LAYERS.flatMap((l) => l.mapLayers.filter((m) => m.interac
 const layerOfMapLayer = Object.fromEntries(LAYERS.flatMap((l) => l.mapLayers.map((m) => [m.id, l.id])));
 
 // ---------- mappa ----------
+registerLocalBasemap(maplibregl);
 const map = new maplibregl.Map({
   container: "map",
   style: baseStyle(),

@@ -48,6 +48,16 @@ Poi aprire http://localhost:8000.
 
 I browser conservano CSS e JavaScript per 10 minuti. Dopo ogni modifica, aumentare il numero `?v=` in `index.html` (due volte) e negli `import` in cima a `js/app.js`, così tutti vedono subito la versione nuova.
 
+## Versione su claude.ai (anteprima)
+
+Le pagine di claude.ai non possono caricare risorse da altri siti. `scripts/build_artifact.py` prepara in `dist-artifact/` (esclusa da git) una versione con la mappa di base, i caratteri e lo stile di MapLibre già dentro, per l'area di Milano fino allo zoom 13:
+
+```bash
+python3 scripts/build_artifact.py
+```
+
+`dist-artifact/files.json` elenca i file da pubblicare accanto alla pagina.
+
 ## Aggiornare i dati
 
 ```bash

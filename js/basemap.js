@@ -18,15 +18,49 @@ export const PAPER = {
 const lines = (filter) => ["all", ["match", ["geometry-type"], ["LineString", "MultiLineString"], true, false], filter];
 const polys = (filter) => ["all", ["match", ["geometry-type"], ["Polygon", "MultiPolygon"], true, false], filter];
 
+const ATTRIBUTION = '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>';
+
+// Nella versione "impacchettata" (scripts/build_artifact.py) i tasselli della mappa
+// e i caratteri delle etichette viaggiano insieme alla pagina invece di arrivare da OpenFreeMap.
+export const LOCAL_BASEMAP = typeof window !== "undefined" && window.ACQUE_LOCAL_BASEMAP;
+
+function sourceAndGlyphs() {
+  if (!LOCAL_BASEMAP) {
+    return {
+      glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
+      omt: { type: "vector", url: "https://tiles.openfreemap.org/planet", attribution: ATTRIBUTION },
+    };
+  }
+  const { bounds, maxzoom } = LOCAL_BASEMAP;
+  return {
+    glyphs: "acque://fonts/{fontstack}/{range}",
+    omt: { type: "vector", tiles: ["acque://tiles/{z}/{x}/{y}"], minzoom: 10, maxzoom, bounds, attribution: ATTRIBUTION },
+  };
+}
+
+// claude.ai non serve file .pbf: i tasselli e i caratteri viaggiano come testo base64
+// (tiles/z/x/y.txt, fonts/Noto-Sans-Regular/0-255.txt) e qui tornano binari.
+export function registerLocalBasemap(maplibregl) {
+  if (!LOCAL_BASEMAP) return;
+  const here = location.href.replace(/[#?].*$/, "").replace(/[^/]*$/, "");
+  maplibregl.addProtocol("acque", async (params, abort) => {
+    const path = params.url.replace("acque://", "").replace(/%20| /g, "-");
+    const res = await fetch(`${here}${path}.txt`, { signal: abort.signal });
+    if (!res.ok) throw new Error(`${path}: ${res.status}`);
+    const bin = atob((await res.text()).trim());
+    const bytes = new Uint8Array(bin.length);
+    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+    return { data: bytes.buffer };
+  });
+}
+
 export function baseStyle() {
   const P = PAPER;
+  const { glyphs, omt } = sourceAndGlyphs();
   return {
     version: 8,
-    glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
-    sources: {
-      omt: { type: "vector", url: "https://tiles.openfreemap.org/planet",
-        attribution: '<a href="https://openfreemap.org" target="_blank">OpenFreeMap</a> © <a href="https://www.openstreetmap.org/copyright" target="_blank">OpenStreetMap</a>' },
-    },
+    glyphs,
+    sources: { omt },
     layers: [
       { id: "bg", type: "background", paint: { "background-color": P.bg } },
       { id: "park", type: "fill", source: "omt", "source-layer": "park", paint: { "fill-color": P.park, "fill-opacity": 0.8 } },
