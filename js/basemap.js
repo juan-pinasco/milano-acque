@@ -23,17 +23,23 @@ const SAT_TILES = "https://server.arcgisonline.com/ArcGIS/rest/services/World_Im
 // e i caratteri delle etichette viaggiano insieme alla pagina invece di arrivare da OpenFreeMap.
 export const LOCAL_BASEMAP = typeof window !== "undefined" && window.ACQUE_LOCAL_BASEMAP;
 
-function sourceAndGlyphs() {
+// Nella versione impacchettata il satellite è Sentinel-2 (EOX, CC BY-NC-SA 4.0), che si può
+// ridistribuire per usi non commerciali; le immagini Esri si usano solo collegandosi al loro servizio.
+const S2_ATTRIBUTION = '<a href="https://s2maps.eu" target="_blank">Sentinel-2 cloudless</a> by EOX IT Services GmbH (Contains modified Copernicus Sentinel data 2020)';
+
+function sources() {
   if (!LOCAL_BASEMAP) {
     return {
       glyphs: "https://tiles.openfreemap.org/fonts/{fontstack}/{range}.pbf",
       omt: { type: "vector", url: "https://tiles.openfreemap.org/planet", attribution: ATTRIBUTION },
+      sat: { type: "raster", tiles: [SAT_TILES], tileSize: 256, maxzoom: 19, attribution: SAT_ATTRIBUTION },
     };
   }
-  const { bounds, maxzoom } = LOCAL_BASEMAP;
+  const { bounds, maxzoom, satMaxzoom } = LOCAL_BASEMAP;
   return {
     glyphs: "acque://fonts/{fontstack}/{range}",
     omt: { type: "vector", tiles: ["acque://tiles/{z}/{x}/{y}"], minzoom: 10, maxzoom, bounds, attribution: ATTRIBUTION },
+    sat: { type: "raster", tiles: ["acque-sat://{z}/{x}/{y}"], tileSize: 256, minzoom: 10, maxzoom: satMaxzoom, bounds, attribution: S2_ATTRIBUTION },
   };
 }
 
@@ -42,15 +48,29 @@ function sourceAndGlyphs() {
 export function registerLocalBasemap(maplibregl) {
   if (!LOCAL_BASEMAP) return;
   const here = location.href.replace(/[#?].*$/, "").replace(/[^/]*$/, "");
+  // satellite: un file JSON per colonna (sat/z/x.json, { y: base64 }) per restare sotto il limite di file
+  const columns = new Map();
+  maplibregl.addProtocol("acque-sat", async (params) => {
+    const [z, x, y] = params.url.replace("acque-sat://", "").split("/");
+    const key = `${z}/${x}`;
+    if (!columns.has(key)) columns.set(key, fetch(`${here}sat/${key}.json`).then((r) => (r.ok ? r.json() : {})));
+    const b64 = (await columns.get(key))[y];
+    if (!b64) throw new Error(`sat ${params.url}: assente`);
+    return { data: fromBase64(b64) };
+  });
   maplibregl.addProtocol("acque", async (params, abort) => {
     const path = params.url.replace("acque://", "").replace(/%20| /g, "-");
     const res = await fetch(`${here}${path}.txt`, { signal: abort.signal });
     if (!res.ok) throw new Error(`${path}: ${res.status}`);
-    const bin = atob((await res.text()).trim());
-    const bytes = new Uint8Array(bin.length);
-    for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
-    return { data: bytes.buffer };
+    return { data: fromBase64((await res.text()).trim()) };
   });
+}
+
+function fromBase64(b64) {
+  const bin = atob(b64);
+  const bytes = new Uint8Array(bin.length);
+  for (let i = 0; i < bin.length; i++) bytes[i] = bin.charCodeAt(i);
+  return bytes.buffer;
 }
 
 // spessore delle strade per zoom, secondo la loro importanza: [principali, medie, minori]
@@ -60,13 +80,13 @@ const roadWidth = ["interpolate", ["exponential", 1.6], ["zoom"],
 
 export function baseStyle() {
   const N = NIGHT;
-  const { glyphs, omt } = sourceAndGlyphs();
+  const { glyphs, omt, sat } = sources();
   return {
     version: 8,
     glyphs,
     sources: {
       omt,
-      sat: { type: "raster", tiles: [SAT_TILES], tileSize: 256, maxzoom: 19, attribution: SAT_ATTRIBUTION },
+      sat,
       // un rettangolo sul mondo intero per il velo colorato
       tint: { type: "geojson", data: { type: "Feature", properties: {},
         geometry: { type: "Polygon", coordinates: [[[-180, -85], [180, -85], [180, 85], [-180, 85], [-180, -85]]] } } },

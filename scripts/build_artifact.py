@@ -25,6 +25,9 @@ OUT = ROOT / "dist-artifact"
 # Stessa area di AREA in js/app.js
 BOUNDS = (8.98, 45.34, 9.4, 45.57)
 ZOOMS = range(10, 14)  # oltre lo zoom 13 la mappa ingrandisce i tasselli del 13
+# Satellite Sentinel-2 cloudless 2020 (EOX, CC BY-NC-SA 4.0): risoluzione 10 m, utile fino allo zoom 14
+SAT_ZOOMS = range(10, 15)
+SAT_TILES = "https://tiles.maps.eox.at/wmts/1.0.0/s2cloudless-2020_3857/default/g/{z}/{y}/{x}.jpg"
 FONTS = ("Noto Sans Regular", "Noto Sans Italic", "Noto Sans Bold")
 GLYPH_RANGES = ("0-255", "256-511", "8192-8447")
 MAPLIBRE_CSS = "https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css"
@@ -75,7 +78,7 @@ def build_index():
     head = re.sub(r'\s*<meta charset[^>]*>|\s*<meta name="viewport"[^>]*>', "", head)
     head = head.replace(MAPLIBRE_CSS, "css/maplibre-gl.css")
     flag = (f"<script>window.ACQUE_LOCAL_BASEMAP = {{ bounds: {json.dumps(list(BOUNDS))}, "
-            f"maxzoom: {max(ZOOMS)} }};</script>")
+            f"maxzoom: {max(ZOOMS)}, satMaxzoom: {max(SAT_ZOOMS)} }};</script>")
     body = body.replace('<script type="module"', f'{flag}\n  <script type="module"')
     return strip_versions(head.strip() + "\n" + body.strip() + "\n")
 
@@ -108,11 +111,24 @@ def main():
             url = template.replace("{z}", str(z)).replace("{x}", str(x)).replace("{y}", str(y))
             fetch_b64(url, OUT / "tiles" / str(z) / str(x) / f"{y}.txt")
             n += 1
-    size = sum(p.stat().st_size for p in OUT.rglob("*") if p.is_file())
-    files = sum(1 for p in OUT.rglob("*") if p.is_file())
+    print("Immagini satellitari (Sentinel-2)…")
+    cache = OUT / ".cache" / "sat"
+    for z in SAT_ZOOMS:
+        cols = {}
+        for x, y in tile_range(z):
+            img = cache / str(z) / str(x) / f"{y}.jpg"
+            fetch_to(SAT_TILES.replace("{z}", str(z)).replace("{x}", str(x)).replace("{y}", str(y)), img)
+            cols.setdefault(x, {})[str(y)] = base64.b64encode(img.read_bytes()).decode()
+        for x, col in cols.items():
+            dest = OUT / "sat" / str(z) / f"{x}.json"
+            dest.parent.mkdir(parents=True, exist_ok=True)
+            dest.write_text(json.dumps(col))
+    published = [p for p in OUT.rglob("*") if p.is_file() and ".cache" not in p.parts]
+    size = sum(p.stat().st_size for p in published)
+    files = len(published)
     print(f"  ✓ {n} tasselli · {files} file in tutto · {size / 1e6:.1f} MB")
     # elenco dei file da pubblicare accanto alla pagina
-    listing = sorted(str(f.relative_to(OUT)) for f in OUT.rglob("*") if f.is_file() and f.name != "index.html" and f.name != "files.json")
+    listing = sorted(str(f.relative_to(OUT)) for f in published if f.name not in ("index.html", "files.json"))
     (OUT / "files.json").write_text(json.dumps([{"path": f} for f in listing]))
 
 

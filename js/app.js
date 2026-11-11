@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=12";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=12";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=12";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=12";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=13";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=13";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=13";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=13";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
