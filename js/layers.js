@@ -4,106 +4,78 @@
 
 // Colori luminosi su fondo notturno: l'acqua corrente in celeste, ogni tipo di punto con la sua luce.
 export const COLORS = {
-  navigli: "#5fd8ff",
-  fiumi: "#3fb0e0",
-  rogge: "#2f8fbc",
-  memoria: "#a8ecff",
-  nascosta: "#7fe0ff",
-  vedovelle: "#6ff0b4",
-  case: "#35e6d2",
+  fiumi: "#62dcff",
+  fontanili: "#c2f3ff",
+  canali: "#4c9dff",
+  memoria: "#dff7ff",
+  laghi: "#3fc1e6",
   fontane: "#ffc860",
-  piscine: "#9db0ff",
+  piscine: "#a99dff",
+  piscineChiuse: "#5d7480",
+  case: "#35e6d2",
+  vedovelle: "#6ff0b4",
   deriva: "#ff6b4a",
 };
 // contorno scuro dei simboli e alone delle etichette
 const DARK = "#03121a";
 
-export const GROUPS = ["visibile", "pubblica", "corpo", "invisibile"];
+// I tre cicli dell'acqua della tesi, dal più grande e naturale al più piccolo e quotidiano.
+export const GROUPS = ["territorio", "contenuta", "consumo"];
 
 const zw = (a, b) => ["interpolate", ["exponential", 1.4], ["zoom"], 10, a, 16, b];
 // alone luminoso sotto i punti
-const glow = (id, r0, r1) => ({ id: `${id}-glow`, type: "circle",
-  paint: { "circle-color": COLORS[id], "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, r0, 15, r1],
+const glow = (id, color, r0, r1) => ({ id: `${id}-glow`, type: "circle",
+  paint: { "circle-color": color, "circle-radius": ["interpolate", ["linear"], ["zoom"], 11, r0, 15, r1],
     "circle-opacity": 0.28, "circle-blur": 1 } });
 const label = (color, extra = {}) => ({ "text-color": color, "text-halo-color": DARK, "text-halo-width": 1.6, ...extra });
+const lineLabel = (minzoom, size, color) => ({ type: "symbol", minzoom,
+  layout: { "symbol-placement": "line", "text-field": ["get", "nome"], "text-font": ["Noto Sans Italic"], "text-size": size,
+    "symbol-spacing": 380, "text-offset": [0, -1] },
+  paint: label(color) });
+const NAVIGLIO = ["==", ["get", "naviglio"], true];
 
 export const LAYERS = [
+  // 1. L'acqua del territorio: ciclo aperto
   {
-    id: "navigli", group: "visibile", swatch: "line", data: "data/reticolo_naviglio.geojson", visible: true,
-    mapLayers: [
-      { id: "navigli-glow", type: "line", layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.navigli, "line-width": zw(8, 26), "line-opacity": 0.22, "line-blur": zw(4, 12) } },
-      { id: "navigli", type: "line", interactive: true, layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.navigli, "line-width": zw(1.8, 5) } },
-      { id: "navigli-label", type: "symbol", minzoom: 12,
-        layout: { "symbol-placement": "line", "text-field": ["get", "nome"], "text-font": ["Noto Sans Italic"],
-          "text-size": ["interpolate", ["linear"], ["zoom"], 12, 11, 16, 14], "symbol-spacing": 400, "text-offset": [0, -1.2] },
-        paint: label(COLORS.navigli, { "text-halo-width": 2 }) },
-    ],
-  },
-  {
-    id: "fiumi", group: "visibile", swatch: "line", data: "data/reticolo_fiume.geojson", visible: true,
+    id: "fiumi", group: "territorio", swatch: "line", data: "data/fiumi.geojson", visible: true,
     mapLayers: [
       { id: "fiumi-glow", type: "line", layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.fiumi, "line-width": zw(5, 14), "line-opacity": 0.16, "line-blur": zw(3, 8) } },
+        paint: { "line-color": COLORS.fiumi, "line-width": zw(7, 22), "line-opacity": 0.2, "line-blur": zw(4, 10) } },
       { id: "fiumi", type: "line", interactive: true, layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.fiumi, "line-width": zw(1, 3), "line-opacity": 0.95 } },
-      { id: "fiumi-label", type: "symbol", minzoom: 13,
-        layout: { "symbol-placement": "line", "text-field": ["get", "nome"], "text-font": ["Noto Sans Italic"], "text-size": 11, "symbol-spacing": 350, "text-offset": [0, -0.9] },
-        paint: label(COLORS.fiumi) },
+        paint: { "line-color": COLORS.fiumi, "line-width": zw(1.6, 4.2) } },
+      { id: "fiumi-label", ...lineLabel(12.5, 11.5, COLORS.fiumi) },
     ],
   },
   {
-    id: "rogge", group: "visibile", swatch: "line-thin", data: "data/reticolo_roggia.geojson", visible: true,
+    id: "fontanili", group: "territorio", swatch: "line", data: "data/fontanili.geojson", visible: true,
     mapLayers: [
-      { id: "rogge", type: "line", interactive: true, layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.rogge, "line-width": zw(0.5, 1.8), "line-opacity": 0.7 } },
-      { id: "rogge-label", type: "symbol", minzoom: 14.5,
-        layout: { "symbol-placement": "line", "text-field": ["get", "nome"], "text-font": ["Noto Sans Italic"], "text-size": 10, "symbol-spacing": 300, "text-offset": [0, -0.8] },
-        paint: label(COLORS.fiumi) },
+      { id: "fontanili-glow", type: "line", layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": COLORS.fontanili, "line-width": zw(5, 14), "line-opacity": 0.22, "line-blur": zw(3, 7) } },
+      { id: "fontanili", type: "line", interactive: true, layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": COLORS.fontanili, "line-width": zw(1, 2.6) } },
+      { id: "fontanili-label", ...lineLabel(13, 10.5, COLORS.fontanili) },
     ],
   },
   {
-    id: "fontane", group: "visibile", swatch: "icon", icon: "fontana", data: "data/fontane.geojson", visible: true,
+    // Reticolo di Bonifica e Minore: i navigli più marcati, le rogge sottili
+    id: "canali", group: "territorio", swatch: "line", data: "data/canali.geojson", visible: true,
     mapLayers: [
-      glow("fontane", 8, 18),
-      { id: "fontane", type: "symbol", interactive: true,
-        layout: { "icon-image": "fontana", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.55, 15, 1],
-          "icon-allow-overlap": true, "icon-padding": 0 } },
+      { id: "rogge", type: "line", interactive: true, filter: ["!", NAVIGLIO], layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": COLORS.canali, "line-width": zw(0.5, 1.8), "line-opacity": 0.6 } },
+      { id: "navigli-glow", type: "line", filter: NAVIGLIO, layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": COLORS.canali, "line-width": zw(8, 26), "line-opacity": 0.24, "line-blur": zw(4, 12) } },
+      { id: "navigli", type: "line", interactive: true, filter: NAVIGLIO, layout: { "line-cap": "round", "line-join": "round" },
+        paint: { "line-color": COLORS.canali, "line-width": zw(1.8, 5) } },
+      { id: "navigli-label", filter: NAVIGLIO, ...lineLabel(12, ["interpolate", ["linear"], ["zoom"], 12, 11, 16, 14], COLORS.canali) },
+      { id: "rogge-label", filter: ["!", NAVIGLIO], ...lineLabel(14.5, 10, COLORS.canali) },
     ],
   },
   {
-    id: "vedovelle", group: "pubblica", swatch: "dot", data: "data/fontanelle.geojson", visible: true,
-    mapLayers: [
-      { id: "vedovelle-glow", type: "circle",
-        paint: { "circle-color": COLORS.vedovelle, "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 13, 6, 16, 12],
-          "circle-opacity": 0.22, "circle-blur": 1 } },
-      { id: "vedovelle", type: "circle", interactive: true,
-        paint: { "circle-color": COLORS.vedovelle, "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.4, 13, 2.8, 16, 5.5],
-          "circle-stroke-color": DARK, "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 11, 0.3, 15, 1.2] } },
-    ],
-  },
-  {
-    id: "case", group: "pubblica", swatch: "icon", icon: "casa", data: "data/case_acqua.geojson", visible: true,
-    mapLayers: [
-      glow("case", 8, 18),
-      { id: "case", type: "symbol", interactive: true,
-        layout: { "icon-image": "casa", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.55, 15, 1], "icon-allow-overlap": true } },
-    ],
-  },
-  {
-    id: "piscine", group: "corpo", swatch: "icon", icon: "piscina", data: "data/piscine.geojson", visible: true,
-    mapLayers: [
-      glow("piscine", 9, 19),
-      { id: "piscine", type: "symbol", interactive: true,
-        layout: { "icon-image": "piscina", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.6, 15, 1.05], "icon-allow-overlap": true } },
-    ],
-  },
-  {
-    id: "memoria", group: "invisibile", swatch: "line-dash", data: "data/memoria.geojson", visible: true,
+    // Ricostruzione indicativa, non dato ufficiale: in attesa di conferma, spenta all'avvio
+    id: "memoria", group: "territorio", swatch: "line-dash", data: "data/memoria.geojson", visible: false,
     mapLayers: [
       { id: "memoria-halo", type: "line", layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.memoria, "line-width": zw(6, 24), "line-opacity": 0.14, "line-blur": zw(3, 10) } },
+        paint: { "line-color": COLORS.memoria, "line-width": zw(6, 24), "line-opacity": 0.12, "line-blur": zw(3, 10) } },
       { id: "memoria", type: "line", interactive: true, layout: { "line-join": "round" },
         paint: { "line-color": COLORS.memoria, "line-width": zw(1.4, 3.4), "line-dasharray": [1.6, 1.4] } },
       { id: "memoria-label", type: "symbol", minzoom: 13,
@@ -112,18 +84,59 @@ export const LAYERS = [
         paint: label(COLORS.memoria, { "text-halo-width": 2 }) },
     ],
   },
+
+  // 2. L'acqua contenuta in città: ciclo chiuso
   {
-    // Dai dati di base OpenStreetMap: i corsi d'acqua marcati come "tunnel".
-    id: "nascosta", group: "invisibile", swatch: "line-dot", source: "omt", visible: false,
+    id: "laghi", group: "contenuta", swatch: "fill", data: "data/laghi.geojson", visible: true,
     mapLayers: [
-      { id: "nascosta-glow", type: "line", "source-layer": "waterway",
-        filter: ["==", ["get", "brunnel"], "tunnel"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.nascosta, "line-width": zw(6, 18), "line-opacity": 0.18, "line-blur": 4 } },
-      { id: "nascosta", type: "line", interactive: true, "source-layer": "waterway",
-        filter: ["==", ["get", "brunnel"], "tunnel"],
-        layout: { "line-cap": "round", "line-join": "round" },
-        paint: { "line-color": COLORS.nascosta, "line-width": zw(1.8, 4), "line-dasharray": [0.4, 1.8] } },
+      { id: "laghi", type: "fill", interactive: true, paint: { "fill-color": COLORS.laghi, "fill-opacity": 0.38 } },
+      { id: "laghi-line", type: "line", paint: { "line-color": COLORS.laghi, "line-width": zw(0.8, 2), "line-opacity": 0.9 } },
+      { id: "laghi-label", type: "symbol", minzoom: 12.5,
+        layout: { "text-field": ["coalesce", ["get", "nome"], ""], "text-font": ["Noto Sans Italic"], "text-size": 11.5 },
+        paint: label(COLORS.laghi) },
+    ],
+  },
+  {
+    id: "fontane", group: "contenuta", swatch: "icon", icon: "fontana", data: "data/fontane.geojson", visible: true,
+    mapLayers: [
+      glow("fontane", COLORS.fontane, 8, 18),
+      { id: "fontane", type: "symbol", interactive: true,
+        layout: { "icon-image": "fontana", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.55, 15, 1],
+          "icon-allow-overlap": true, "icon-padding": 0 } },
+    ],
+  },
+  {
+    // Le 8 piscine comunali all'aperto: accese quelle aperte nell'estate 2026, spente le chiuse
+    id: "piscine", group: "contenuta", swatch: "icon", icon: "piscina", data: "data/piscine.geojson", visible: true,
+    mapLayers: [
+      { ...glow("piscine", COLORS.piscine, 10, 22), filter: ["==", ["get", "stato"], "attiva"] },
+      { id: "piscine", type: "symbol", interactive: true,
+        layout: { "icon-image": ["match", ["get", "stato"], "attiva", "piscina", "piscina-chiusa"],
+          "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.75, 15, 1.15], "icon-allow-overlap": true } },
+      { id: "piscine-label", type: "symbol", minzoom: 12,
+        layout: { "text-field": ["get", "nome"], "text-font": ["Noto Sans Regular"], "text-size": 11, "text-offset": [0, 1.6], "text-anchor": "top" },
+        paint: label(["match", ["get", "stato"], "attiva", COLORS.piscine, "#8aa3ad"]) },
+    ],
+  },
+
+  // 3. L'acqua di consumo urbano: ciclo integrato
+  {
+    id: "case", group: "consumo", swatch: "icon", icon: "casa", data: "data/case_acqua.geojson", visible: true,
+    mapLayers: [
+      glow("case", COLORS.case, 8, 18),
+      { id: "case", type: "symbol", interactive: true,
+        layout: { "icon-image": "casa", "icon-size": ["interpolate", ["linear"], ["zoom"], 11, 0.55, 15, 1], "icon-allow-overlap": true } },
+    ],
+  },
+  {
+    id: "vedovelle", group: "consumo", swatch: "dot", data: "data/fontanelle.geojson", visible: true,
+    mapLayers: [
+      { id: "vedovelle-glow", type: "circle",
+        paint: { "circle-color": COLORS.vedovelle, "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 3, 13, 6, 16, 12],
+          "circle-opacity": 0.22, "circle-blur": 1 } },
+      { id: "vedovelle", type: "circle", interactive: true,
+        paint: { "circle-color": COLORS.vedovelle, "circle-radius": ["interpolate", ["linear"], ["zoom"], 10, 1.4, 13, 2.8, 16, 5.5],
+          "circle-stroke-color": DARK, "circle-stroke-width": ["interpolate", ["linear"], ["zoom"], 11, 0.3, 15, 1.2] } },
     ],
   },
 ];
@@ -143,6 +156,11 @@ const ICON_SVG = {
     <circle cx="28" cy="28" r="22" fill="${COLORS.piscine}" stroke="${DARK}" stroke-width="3"/>
     <g fill="none" stroke="${DARK}" stroke-width="2.8" stroke-linecap="round">
       <path d="M16 24 q3 -3 6 0 t6 0 t6 0 t6 0"/><path d="M16 31 q3 -3 6 0 t6 0 t6 0 t6 0"/><path d="M16 38 q3 -3 6 0 t6 0 t6 0 t6 0"/></g></svg>`,
+  "piscina-chiusa": `<svg xmlns="http://www.w3.org/2000/svg" width="56" height="56" viewBox="0 0 56 56">
+    <circle cx="28" cy="28" r="22" fill="${COLORS.piscineChiuse}" stroke="${DARK}" stroke-width="3"/>
+    <g fill="none" stroke="${DARK}" stroke-width="2.8" stroke-linecap="round" opacity=".7">
+      <path d="M16 24 q3 -3 6 0 t6 0 t6 0 t6 0"/><path d="M16 31 q3 -3 6 0 t6 0 t6 0 t6 0"/><path d="M16 38 q3 -3 6 0 t6 0 t6 0 t6 0"/></g>
+    <path d="M14 42 L42 14" stroke="#c9d6db" stroke-width="3" stroke-linecap="round"/></svg>`,
   arrow: `<svg xmlns="http://www.w3.org/2000/svg" width="44" height="44" viewBox="0 0 44 44">
     <path d="M8 34 L22 8 L36 34 L22 27 Z" fill="${COLORS.deriva}" stroke="${DARK}" stroke-width="2.5" stroke-linejoin="round"/></svg>`,
 };

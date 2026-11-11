@@ -155,6 +155,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .sw.line-thin { height: 2px; background: var(--c); opacity: .85; }
 .sw.line-dash { height: 0; border-top: 3px dashed var(--c); }
 .sw.line-dot { height: 0; border-top: 3px dotted var(--c); }
+.sw.fill { width: 16px; height: 12px; margin: 0 3px; border-radius: 3px; background: color-mix(in srgb, var(--c) 45%, transparent); box-shadow: inset 0 0 0 1.5px var(--c); }
 .sw.dot { width: 10px; height: 10px; margin: 0 6px; border-radius: 50%; background: var(--c); box-shadow: 0 0 0 1.5px var(--paper), 0 0 6px var(--c); }
 .sw.icon { width: 22px; height: 22px; }
 .sw.icon svg { width: 100%; height: 100%; display: block; }
@@ -241,7 +242,18 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 #explore .panel-head { align-items: center; gap: 12px; }
 #explore .panel-title { margin: 0; }
 #explore .sheet-toggle { display: block; margin-left: auto; border: 0; background: none; padding: 2px 0; color: var(--water); font-size: 13px; font-weight: 500; }
-#explore .layer-chips { display: flex; gap: 6px; margin-top: 10px; }
+#explore .layer-chips { display: flex; gap: 6px 22px; margin-top: 10px; }
+/* le chip raggruppate per ciclo: numero e nome breve sopra, chip sotto */
+.chip-group { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.chip-group + .chip-group { padding-left: 22px; border-left: 1px solid var(--rule); }
+.chip-group-label { font: 500 10.5px var(--mono); letter-spacing: .1em; text-transform: uppercase; color: var(--ink-3); white-space: nowrap; }
+.chip-row { display: flex; gap: 6px; }
+.chip .sw.fill { width: 14px; height: 11px; margin: 0 2px; }
+/* lista completa: numero del ciclo e frase sul ciclo */
+.group h3 { display: flex; align-items: baseline; gap: 8px; }
+.group-n { font: 500 11px var(--mono); color: var(--water); }
+.group-cycle { margin: -2px 0 6px; font-size: 12px; color: var(--ink-3); font-style: italic; }
+.tag.tag-off { background: var(--hover); color: var(--ink-2); }
 .chip {
   flex: none; display: inline-flex; align-items: center; gap: 7px;
   padding: 7px 12px 7px 9px; border-radius: 999px;
@@ -279,7 +291,7 @@ body:not([data-mode="story"]) .story-progress { display: none; }
     width: max-content; max-width: min(1280px, calc(100vw - 200px));
     padding: 14px 18px 16px; overflow: visible;
   }
-  #explore .layer-chips { flex-wrap: wrap; }
+  #explore .chip-row { flex-wrap: wrap; }
   /* "Tutti i livelli": i quattro gruppi affiancati in colonne */
   #explore.is-open #layer-list {
     display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 0 28px;
@@ -368,9 +380,11 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 
   /* esplora: le chip scorrono di lato */
   #explore .layer-chips {
-    overflow-x: auto; scrollbar-width: none;
+    overflow-x: auto; scrollbar-width: none; gap: 14px;
     margin: 8px -14px 0; padding: 2px 14px 4px;
   }
+  .chip-group { flex: none; gap: 5px; }
+  .chip-group + .chip-group { padding-left: 14px; }
   #explore .layer-chips::-webkit-scrollbar { display: none; }
 
   /* deriva: citazione ridotta, tappe come schede orizzontali */

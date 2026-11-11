@@ -12,15 +12,33 @@ Lingue: italiano (principale), spagnolo, inglese.
 
 ## Livelli
 
-| Livello | Fonte | Elementi |
-|---|---|---|
-| Vedovelle | Comune di Milano, Open Data (ds502) | 724 |
-| Case dell'acqua | Comune di Milano, Open Data (ds625) | 54 |
-| Piscine | Comune di Milano, impianti sportivi (ds34), filtrati per nuoto e attività subacquee | 30 |
-| Fontane | fontanedimilano.it | 83 |
-| Navigli, fiumi, rogge | Regione Lombardia, Reticolo Idrografico Regionale Unificato | 2.615 tratti |
-| Navigli coperti | Tracciato indicativo ricostruito sulle strade attuali | 2 |
-| Corsi d'acqua intubati | OpenStreetMap (dalla mappa di base) | — |
+Solo fonti ufficiali (Comune di Milano, Regione Lombardia) e fontanedimilano.it. I livelli seguono i tre cicli dell'acqua della tesi, dal più grande e naturale al più piccolo e quotidiano.
+
+**1. L'acqua del territorio** · ciclo aperto, attraversa la città da nord a sud
+
+| Livello | Fonte |
+|---|---|
+| Fiumi e torrenti | Regione Lombardia, RIRU: Reticolo Idrico Principale (RIP) |
+| Fontanili e risorgive | Regione Lombardia, RIRU: corsi del RIB e del RIM chiamati "Fontanile…" |
+| Navigli e rogge | Regione Lombardia, RIRU: Reticolo di Bonifica (RIB, con i tre navigli) e Minore (RIM) |
+| Navigli coperti | Tracciato indicativo, non ufficiale (spento all'avvio, da confermare) |
+
+**2. L'acqua contenuta in città** · ciclo chiuso
+
+| Livello | Fonte |
+|---|---|
+| Laghetti e cave | Regione Lombardia, Database Topografico (specchi d'acqua); nomi dei parchi dal Comune (ds89) |
+| Fontane ornamentali | fontanedimilano.it |
+| Piscine comunali all'aperto | Comune di Milano, centri balneari (ds32) e impianti sportivi (ds34); stato nell'estate 2026 dalla tesi |
+
+**3. L'acqua di consumo urbano** · ciclo integrato
+
+| Livello | Fonte |
+|---|---|
+| Case dell'acqua | Comune di Milano, Open Data (ds625) |
+| Vedovelle | Comune di Milano, Open Data (ds502) |
+
+La mappa di base usa l'immagine satellitare Esri e, solo come riferimento, strade e nomi di OpenStreetMap.
 
 ## Struttura
 
@@ -61,7 +79,7 @@ python3 scripts/build_artifact.py
 ## Aggiornare i dati
 
 ```bash
-pip install shapely
+pip install shapely pyproj
 python3 scripts/build_data.py
 ```
 

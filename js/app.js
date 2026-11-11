@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=13";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=13";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=13";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=13";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=14";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=14";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=14";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=14";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -34,7 +34,7 @@ const state = {
 let t = makeT(state.lang);
 
 // Ordine di disegno: dal reticolo minore in basso ai punti in alto.
-const DRAW_ORDER = ["rogge", "fiumi", "nascosta", "memoria", "navigli", "vedovelle", "fontane", "case", "piscine"];
+const DRAW_ORDER = ["laghi", "canali", "fiumi", "fontanili", "memoria", "vedovelle", "fontane", "case", "piscine"];
 const byId = Object.fromEntries(LAYERS.map((l) => [l.id, l]));
 const interactiveIds = LAYERS.flatMap((l) => l.mapLayers.filter((m) => m.interactive).map((m) => m.id));
 const layerOfMapLayer = Object.fromEntries(LAYERS.flatMap((l) => l.mapLayers.map((m) => [m.id, l.id])));
@@ -262,7 +262,7 @@ function activateStep(i) {
 // ---------- esplora ----------
 function renderLayerList() {
   const vars = state.counts;
-  $("#layer-list").innerHTML = GROUPS.map((g) => {
+  $("#layer-list").innerHTML = GROUPS.map((g, gi) => {
     const items = LAYERS.filter((l) => l.group === g).map((l) => `
       <button type="button" class="layer" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}">
         ${swatch(l)}
@@ -270,11 +270,17 @@ function renderLayerList() {
         <span class="count">${l.swatch.startsWith("line") || !vars[l.id] ? "" : fmt(vars[l.id])}</span>
         <span class="desc">${esc(t("desc." + l.id))}</span>
       </button>`).join("");
-    return `<div class="group"><h3>${esc(t("group." + g))}</h3>${items}</div>`;
+    return `<div class="group"><h3><span class="group-n">${gi + 1}</span>${esc(t("group." + g))}</h3>
+      <p class="group-cycle">${esc(t("cycle." + g))}</p>${items}</div>`;
   }).join("");
-  // su mobile: una riga di "chip" da scorrere di lato, sempre a portata di pollice
-  $("#layer-chips").innerHTML = LAYERS.map((l) => `
-    <button type="button" class="chip" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}" title="${esc(t("layer." + l.id))}">${swatch(l)}<span>${esc(t("chip." + l.id))}</span></button>`).join("");
+  // le chip, raggruppate per ciclo: su mobile scorrono di lato, su desktop in tre colonne
+  $("#layer-chips").innerHTML = GROUPS.map((g, gi) => `
+    <div class="chip-group">
+      <span class="chip-group-label" title="${esc(t("group." + g))}">${gi + 1} · ${esc(t("groupShort." + g))}</span>
+      <div class="chip-row">${LAYERS.filter((l) => l.group === g).map((l) => `
+        <button type="button" class="chip" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}" title="${esc(t("layer." + l.id))}">${swatch(l)}<span>${esc(t("chip." + l.id))}</span></button>`).join("")}
+      </div>
+    </div>`).join("");
   updateLayersToggle();
 }
 
@@ -304,11 +310,13 @@ function applyExplore() {
 }
 
 // ---------- scheda ----------
-const TYPE_OF = { vedovelle: "vedovella", case: "casa", fontane: "fontana", piscine: "piscina", navigli: "naviglio", fiumi: "fiume", rogge: "roggia", memoria: "memoria", nascosta: "nascosta" };
+const TYPE_OF = { vedovelle: "vedovella", case: "casa", fontane: "fontana", piscine: "piscina", canali: "canale", fiumi: "fiume", fontanili: "fontanile", laghi: "lago", memoria: "memoria" };
+const RETE = { RIP: "rete.RIP", RIB: "rete.RIB", RIM: "rete.RIM" };
+const fmtArea = (mq) => (mq >= 10000 ? `${fmt(Math.round(mq / 1000) / 10)} ha` : `${fmt(Math.round(mq / 10) * 10)} m²`);
 
 function cardHTML(layerId, f) {
   const p = f.properties || {};
-  const type = TYPE_OF[layerId];
+  const type = layerId === "canali" ? (p.naviglio ? "naviglio" : "roggia") : TYPE_OF[layerId];
   const head = `<div class="type">${swatch(byId[layerId])}${esc(t("card." + type))}</div>`;
   const [lon, lat] = f.geometry.type === "Point" ? f.geometry.coordinates : [state.clickLngLat.lng, state.clickLngLat.lat];
   const dir = `<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${lat},${lon}">${esc(t("ui.directions"))}</a>`;
@@ -325,14 +333,18 @@ function cardHTML(layerId, f) {
       return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${p.municipio ? esc(`${t("ui.municipio")} ${p.municipio}`) : ""}</p>${tags ? `<div class="tags">${tags}</div>` : ""}<div class="actions">${dir}${more}</div>${coords}`;
     }
     case "piscine": {
-      const url = p.url ? (p.url.startsWith("http") ? p.url : `https://${p.url}`) : null;
-      const tags = (p.attivita || "").split(", ").filter(Boolean).map((x) => `<span class="tag">${esc(x)}</span>`).join("");
-      return `${head}<h3>${esc(p.indirizzo || p.nome)}</h3><p class="meta">${esc([p.nome, p.nil].filter(Boolean).join(" · "))}</p>${tags ? `<div class="tags">${tags}</div>` : ""}<div class="actions">${dir}${url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(url)}">${esc(t("ui.website"))} ↗</a>` : ""}</div>${coords}`;
+      const open = p.stato === "attiva";
+      const tag = `<span class="tag ${open ? "" : "tag-off"}">${esc(t(open ? "card.piscinaAperta" : "card.piscinaChiusa"))}</span>`;
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc([p.indirizzo, p.nil].filter(Boolean).join(" · "))}</p><div class="tags">${tag}</div><p class="text">${esc(t("card.piscinaText"))}</p><div class="actions">${dir}</div>${coords}`;
     }
+    case "fiumi":
+    case "fontanili":
+    case "canali":
+      return `${head}<h3>${esc(p.nome || t("ui.unnamed"))}</h3><p class="meta">${esc(t(RETE[p.rete] || "ui.unnamed"))}</p><p class="text">${esc(t("desc." + layerId))}</p>`;
+    case "laghi":
+      return `${head}<h3>${esc(p.nome || p.parco || t("card.lago"))}</h3><p class="meta">${esc([p.nome ? p.parco : null, fmtArea(p.area_mq)].filter(Boolean).join(" · "))}</p><p class="text">${esc(t("desc.laghi"))}</p>`;
     case "memoria":
       return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc(p.anno)} · ${esc(t("ui.indicative"))}</p><p class="text">${esc(t("card.memoriaText"))}</p>`;
-    case "nascosta":
-      return `${head}<h3>${esc(p.name || p["name:it"] || t("ui.unnamed"))}</h3><p class="text">${esc(t("card.nascostaText"))}</p>`;
     default:
       return `${head}<h3>${esc(p.nome || t("ui.unnamed"))}</h3><p class="meta">${esc(t("desc." + layerId))}</p>`;
   }

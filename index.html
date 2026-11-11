@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-  <link href="css/style.css?v=13" rel="stylesheet">
+  <link href="css/style.css?v=14" rel="stylesheet">
 </head>
 <body>
   <div id="map" aria-label="Mappa"></div>
@@ -86,19 +86,20 @@
     <h2 class="display" data-i18n="sources.title"></h2>
     <p data-i18n="sources.intro"></p>
     <ul class="source-list">
-      <li><strong>Fontanelle (vedovelle)</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds502_fontanelle-nel-comune-di-milano" target="_blank" rel="noopener">ds502</a> · CC BY 4.0</li>
-      <li><strong>Case dell'acqua</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds625-case-dell-acqua-nel-comune-di-milano" target="_blank" rel="noopener">ds625</a> · CC BY 4.0</li>
-      <li><strong>Piscine</strong> · Comune di Milano, impianti sportivi filtrati per nuoto e attività subacquee · <a href="https://dati.comune.milano.it/dataset/ds34_infogeo_impianti_sportivi_localizzazione_" target="_blank" rel="noopener">ds34</a> · CC BY 4.0</li>
+      <li><strong>Fiumi e torrenti, navigli e rogge, fontanili</strong> · Regione Lombardia, Reticolo Idrografico Regionale Unificato (D.g.r. XII/3668 del 2024): Reticolo Idrico Principale (RIP), di Bonifica (RIB) e Minore (RIM) · <a href="https://www.geoportale.regione.lombardia.it/" target="_blank" rel="noopener">Geoportale della Lombardia</a></li>
+      <li><strong>Laghetti e cave</strong> · Regione Lombardia, Database Topografico Regionale (specchi d'acqua); nomi dei parchi: Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds89_infogeo_parchi_giardini_localizzazione_" target="_blank" rel="noopener">ds89</a></li>
       <li><strong>Fontane</strong> · <a href="https://www.fontanedimilano.it/percorsi/cartografia/" target="_blank" rel="noopener">Fontane di Milano</a></li>
-      <li><strong>Navigli, fiumi, rogge</strong> · Regione Lombardia, Reticolo Idrografico Regionale Unificato · <a href="https://www.geoportale.regione.lombardia.it/" target="_blank" rel="noopener">Geoportale della Lombardia</a></li>
+      <li><strong>Piscine comunali all'aperto</strong> · Comune di Milano, Open Data · centri balneari <a href="https://dati.comune.milano.it/dataset/ds32-infogeo-centri-balneari-localizzazione" target="_blank" rel="noopener">ds32</a> e impianti sportivi <a href="https://dati.comune.milano.it/dataset/ds34_infogeo_impianti_sportivi_localizzazione_" target="_blank" rel="noopener">ds34</a> · stato nell'estate 2026: rilevamento della tesi</li>
+      <li><strong>Case dell'acqua</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds625-case-dell-acqua-nel-comune-di-milano" target="_blank" rel="noopener">ds625</a> · CC BY 4.0</li>
+      <li><strong>Vedovelle</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds502_fontanelle-nel-comune-di-milano" target="_blank" rel="noopener">ds502</a> · CC BY 4.0</li>
       <li><strong>Confine comunale</strong> · Comune di Milano, Open Data · <a href="https://dati.comune.milano.it/dataset/ds2841-confini-amministrativi-del-comune-di-milano" target="_blank" rel="noopener">ds2841</a></li>
       <li><strong>Immagine satellitare</strong> · © <a href="https://www.esri.com" target="_blank" rel="noopener">Esri</a>, Maxar, Earthstar Geographics · nella versione di anteprima su claude.ai: <a href="https://s2maps.eu" target="_blank" rel="noopener">Sentinel-2 cloudless</a> di EOX IT Services GmbH (dati Copernicus Sentinel 2020, CC BY-NC-SA 4.0)</li>
-      <li><strong>Mappa di base, corsi d'acqua intubati</strong> · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · <a href="https://maplibre.org" target="_blank" rel="noopener">MapLibre</a></li>
+      <li><strong>Strade e nomi della mappa di base</strong> (solo riferimento, non dati della tesi) · © <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap</a> contributors · <a href="https://openfreemap.org" target="_blank" rel="noopener">OpenFreeMap</a> · <a href="https://maplibre.org" target="_blank" rel="noopener">MapLibre</a></li>
     </ul>
     <p class="muted" data-i18n="sources.note"></p>
   </dialog>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script type="module" src="js/app.js?v=13"></script>
+  <script type="module" src="js/app.js?v=14"></script>
 </body>
 </html>

@@ -49,7 +49,7 @@ export function buildPool(data) {
     ...pts(data.case, "casa"),
     ...pts(data.fontane, "fontana", "nome"),
     ...pts(data.piscine, "piscina", "indirizzo"),
-    ...sampleLines(data.navigli.features, "naviglio"),
+    ...sampleLines(data.canali.features.filter((f) => f.properties.naviglio), "naviglio"),
     ...sampleLines(data.fiumi.features.filter((f) => f.properties.nome), "fiume", 300),
     ...sampleLines(data.memoria.features, "memoria", 180),
   ];
