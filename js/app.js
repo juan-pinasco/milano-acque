@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=6";
-import { baseStyle, PAPER } from "./basemap.js?v=6";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=6";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=6";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=8";
+import { baseStyle, PAPER } from "./basemap.js?v=8";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=8";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=8";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -136,7 +136,7 @@ function setLayers(visibleIds) {
   }
 }
 
-// Su mobile la mappa resta libera tra la barra in alto e il pannello in basso:
+// La mappa resta libera tra i comandi in alto e il pannello in basso (su mobile, e in Esplora anche su desktop):
 // il margine si calcola su ciò che è davvero visibile in quel momento.
 function mobilePadding() {
   const top = $(".topbar").getBoundingClientRect().bottom + 16;
@@ -270,7 +270,7 @@ function renderLayerList() {
   }).join("");
   // su mobile: una riga di "chip" da scorrere di lato, sempre a portata di pollice
   $("#layer-chips").innerHTML = LAYERS.map((l) => `
-    <button type="button" class="chip" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}">${swatch(l)}<span>${esc(t("layer." + l.id))}</span></button>`).join("");
+    <button type="button" class="chip" data-layer="${l.id}" aria-pressed="${state.explore[l.id]}" title="${esc(t("layer." + l.id))}">${swatch(l)}<span>${esc(t("chip." + l.id))}</span></button>`).join("");
   updateLayersToggle();
 }
 
@@ -510,7 +510,7 @@ document.addEventListener("click", (e) => {
   document.body.classList.toggle("sheets-collapsed");
   updateCollapseButtons();
   // la mappa si ricentra sullo spazio liberato (o occupato) dal pannello
-  if (isMobile() && state.ready) map.easeTo({ padding: mobilePadding(), duration: reduceMotion ? 0 : 450 });
+  if (state.ready && (isMobile() || state.mode === "explore")) map.easeTo({ padding: mobilePadding(), duration: reduceMotion ? 0 : 450 });
 });
 
 // ---------- modalità ----------
@@ -579,7 +579,7 @@ map.on("load", async () => {
   // la vista iniziale si centra sulla parte di mappa non coperta dal pannello
   if (MODES[0] === "explore") {
     map.jumpTo({ center: EXPLORE_CAMERA.center, zoom: EXPLORE_CAMERA.zoom - (isMobile() ? 1 : 0),
-      padding: isMobile() ? mobilePadding() : { top: 0, right: 0, bottom: 0, left: 380 } });
+      padding: mobilePadding() });
   }
   // su mobile i crediti partono chiusi nel pulsante ⓘ
   if (isMobile()) $(".maplibregl-ctrl-attrib")?.classList.remove("maplibregl-compact-show");

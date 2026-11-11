@@ -229,6 +229,59 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .mode-ic, .info-ic, .step-nav, .layer-chips, .sheet-toggle, .more-btn, .st-count, .sheet-collapse { display: none; }
 .panel-head { display: flex; align-items: baseline; justify-content: space-between; }
 
+/* ---------- esplora: barra dei livelli (tutte le dimensioni) ---------- */
+#explore .panel-head { align-items: center; gap: 12px; }
+#explore .panel-title { margin: 0; }
+#explore .sheet-toggle { display: block; margin-left: auto; border: 0; background: none; padding: 2px 0; color: var(--water); font-size: 13px; font-weight: 500; }
+#explore .layer-chips { display: flex; gap: 6px; margin-top: 10px; }
+.chip {
+  flex: none; display: inline-flex; align-items: center; gap: 7px;
+  padding: 7px 12px 7px 9px; border-radius: 999px;
+  border: 1px solid var(--rule); background: var(--paper-2); font-size: 13px; font-weight: 500; white-space: nowrap;
+  transition: opacity .2s, background .2s, border-color .2s;
+}
+.chip:hover { border-color: color-mix(in srgb, var(--water) 45%, var(--rule)); }
+.chip .sw { width: 18px; height: 18px; }
+.chip .sw.dot { width: 9px; height: 9px; margin: 0 4px; }
+.chip .sw.line, .chip .sw.line-thin, .chip .sw.line-dash, .chip .sw.line-dot { width: 16px; }
+.chip[aria-pressed="true"] { border-color: color-mix(in srgb, var(--water) 35%, var(--rule)); background: var(--water-soft); }
+.chip[aria-pressed="false"] { opacity: .5; }
+.chip[aria-pressed="false"] .sw { filter: grayscale(1); }
+#layer-list { display: none; margin-top: 12px; }
+#explore.is-open #layer-list { display: block; }
+#explore.is-open .layer-chips { display: none; }
+
+/* freccia per ridurre il pannello a una striscia */
+#explore .sheet-collapse {
+  display: grid; place-items: center; flex: none;
+  width: 34px; height: 34px; margin: -6px -6px -6px 2px; padding: 0;
+  border: 0; border-radius: 50%; background: rgba(35, 39, 43, .05); color: var(--ink-2);
+}
+#explore .sheet-collapse:hover { background: rgba(35, 39, 43, .1); color: var(--ink); }
+.sheet-collapse svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
+.sheets-collapsed .sheet-collapse svg { transform: rotate(180deg); }
+.sheets-collapsed #explore .layer-chips,
+.sheets-collapsed #explore #layer-list,
+.sheets-collapsed #explore .sheet-toggle { display: none; }
+
+/* su schermi larghi: barra orizzontale in basso, al centro */
+@media (min-width: 761px) {
+  #explore.panel {
+    top: auto; bottom: 20px; left: 50%; transform: translateX(-50%);
+    width: max-content; max-width: min(1280px, calc(100vw - 200px));
+    padding: 14px 18px 16px; overflow: visible;
+  }
+  #explore .layer-chips { flex-wrap: wrap; }
+  /* "Tutti i livelli": i quattro gruppi affiancati in colonne */
+  #explore.is-open #layer-list {
+    display: grid; grid-template-columns: repeat(4, minmax(210px, 1fr)); gap: 0 28px;
+    max-height: 52vh; overflow-y: auto;
+  }
+  #explore.is-open .group { margin-bottom: 4px; }
+  /* la scheda di un punto va in alto a sinistra, dove non copre la barra */
+  .card { top: 16px; left: 16px; right: auto; bottom: auto; max-height: calc(100vh - 140px); overflow-y: auto; }
+}
+
 /* ---------- mobile ---------- */
 @media (max-width: 760px) {
   :root {
@@ -305,29 +358,12 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   .panel::before { content: ""; display: block; width: 36px; height: 4px; border-radius: 2px; background: var(--rule); margin: -4px auto 8px; }
   body.has-card .panel { display: none; }
 
-  /* esplora: chip sempre visibili, lista completa a richiesta */
-  #explore .panel-title { margin: 0 0 8px; }
-  .sheet-toggle { display: block; border: 0; background: none; padding: 2px 0; color: var(--water); font-size: 13px; font-weight: 500; }
-  .layer-chips {
-    display: flex; gap: 6px; overflow-x: auto; scrollbar-width: none;
-    margin: 0 -14px; padding: 2px 14px 4px;
+  /* esplora: le chip scorrono di lato */
+  #explore .layer-chips {
+    overflow-x: auto; scrollbar-width: none;
+    margin: 8px -14px 0; padding: 2px 14px 4px;
   }
-  .layer-chips::-webkit-scrollbar { display: none; }
-  .chip {
-    flex: none; display: inline-flex; align-items: center; gap: 7px;
-    padding: 7px 12px 7px 9px; border-radius: 999px;
-    border: 1px solid var(--rule); background: var(--paper-2); font-size: 13px; font-weight: 500; white-space: nowrap;
-    transition: opacity .2s, background .2s;
-  }
-  .chip .sw { width: 18px; height: 18px; }
-  .chip .sw.dot { width: 9px; height: 9px; margin: 0 4px; }
-  .chip .sw.line, .chip .sw.line-thin, .chip .sw.line-dash, .chip .sw.line-dot { width: 16px; }
-  .chip[aria-pressed="true"] { border-color: color-mix(in srgb, var(--water) 35%, var(--rule)); background: var(--water-soft); }
-  .chip[aria-pressed="false"] { opacity: .5; }
-  .chip[aria-pressed="false"] .sw { filter: grayscale(1); }
-  #layer-list { display: none; margin-top: 12px; }
-  #explore.is-open #layer-list { display: block; }
-  #explore.is-open .layer-chips { display: none; }
+  #explore .layer-chips::-webkit-scrollbar { display: none; }
 
   /* deriva: citazione ridotta, tappe come schede orizzontali */
   .drift .kicker { display: none; }
@@ -363,8 +399,6 @@ body:not([data-mode="story"]) .story-progress { display: none; }
     width: 34px; height: 34px; margin: -6px -6px -6px 2px; padding: 0;
     border: 0; border-radius: 50%; background: rgba(35, 39, 43, .05); color: var(--ink-2);
   }
-  .sheet-collapse svg { width: 20px; height: 20px; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; transition: transform .25s; }
-  .sheets-collapsed .sheet-collapse svg { transform: rotate(180deg); }
   .step-card .sheet-collapse { position: absolute; top: 10px; right: 10px; margin: 0; }
   .step-card { position: relative; }
   .step-card .kicker { padding-right: 40px; }
@@ -376,16 +410,11 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   .sheets-collapsed .step-nav { margin-top: 8px; }
 
   .sheets-collapsed .panel { overflow: hidden; padding-bottom: 10px; }
-  .sheets-collapsed #explore .panel-title { margin: 0; }
-  .sheets-collapsed #explore .layer-chips,
-  .sheets-collapsed #explore #layer-list,
-  .sheets-collapsed #explore .sheet-toggle { display: none; }
   .sheets-collapsed #drift > :not(.drift-head) { display: none; }
   .sheets-collapsed #drift .drift-head { margin: 0; }
   .sheets-collapsed #drift .more-btn { display: none; }
   .drift-head .sheet-collapse { align-self: center; }
-  .panel-head { align-items: center; }
-  .panel-head .sheet-toggle, .drift-head .more-btn { margin-left: auto; }
+  .drift-head .more-btn { margin-left: auto; }
 
   /* scheda: foglio in basso */
   .card {
