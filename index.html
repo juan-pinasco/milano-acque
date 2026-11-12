@@ -12,7 +12,7 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300..700;1,9..144,300..700&family=Inter:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" rel="stylesheet">
-  <link href="css/style.css?v=27" rel="stylesheet">
+  <link href="css/style.css?v=28" rel="stylesheet">
 </head>
 <body>
   <div id="map" aria-label="Mappa"></div>
@@ -38,6 +38,9 @@
       <button type="button" class="link-btn" id="open-sources">
         <span data-i18n="ui.sources"></span>
         <svg class="info-ic" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9.5"/><path d="M12 11v6"/><circle cx="12" cy="7.6" r=".6"/></svg>
+      </button>
+      <button type="button" class="icon-btn" id="fullscreen" hidden>
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path class="enter" d="M4 9V4h5M20 9V4h-5M4 15v5h5M20 15v5h-5"/><path class="exit" d="M9 4v5H4M15 4v5h5M9 20v-5H4M15 20v-5h5"/></svg>
       </button>
     </div>
   </header>
@@ -100,6 +103,6 @@
   </dialog>
 
   <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
-  <script type="module" src="js/app.js?v=27"></script>
+  <script type="module" src="js/app.js?v=28"></script>
 </body>
 </html>

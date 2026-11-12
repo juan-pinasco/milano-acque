@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=27";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=27";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=27";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=27";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=28";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=28";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=28";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=28";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -183,6 +183,7 @@ function renderStatic() {
   document.documentElement.lang = state.lang;
   $$("[data-i18n]").forEach((el) => { el.textContent = t(el.dataset.i18n); });
   updateCollapseButtons();
+  if (fsEnabled) updateFullscreenButton();
   $$(".lang button").forEach((b) => b.setAttribute("aria-pressed", String(b.dataset.lang === state.lang)));
   $("#card-close").setAttribute("aria-label", t("ui.close"));
   $("#drift-generate").textContent = state.drift ? t("drift.again") : t("drift.generate");
@@ -627,6 +628,31 @@ $$(".lang button").forEach((b) => b.addEventListener("click", () => {
   renderDrift();
   if (state.selected) openCard(state.selected.layerId, state.selected.f);
 }));
+
+// Schermo intero per tutta la mappa (per presentarla), come un film: Esc per uscire.
+// Su iPhone Safari non lo permette per una pagina, e il pulsante resta nascosto.
+const fsButton = $("#fullscreen");
+const fsElement = () => document.fullscreenElement || document.webkitFullscreenElement;
+const fsEnabled = Boolean(document.fullscreenEnabled || document.webkitFullscreenEnabled);
+function updateFullscreenButton() {
+  const on = Boolean(fsElement());
+  fsButton.classList.toggle("is-on", on);
+  const label = t(on ? "ui.exitFullscreen" : "ui.fullscreen");
+  fsButton.setAttribute("aria-label", label);
+  fsButton.title = label;
+}
+if (fsEnabled) {
+  fsButton.hidden = false;
+  fsButton.addEventListener("click", () => {
+    const page = document.documentElement;
+    const req = fsElement()
+      ? (document.exitFullscreen || document.webkitExitFullscreen).call(document)
+      : (page.requestFullscreen || page.webkitRequestFullscreen).call(page);
+    req?.catch?.(() => {}); // alcuni contesti (app, anteprime) lo rifiutano: si resta come prima
+  });
+  document.addEventListener("fullscreenchange", updateFullscreenButton);
+  document.addEventListener("webkitfullscreenchange", updateFullscreenButton);
+}
 
 const sources = $("#sources");
 $("#open-sources").addEventListener("click", () => sources.showModal());
