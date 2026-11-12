@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=15";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=15";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=15";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=15";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=16";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=16";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=16";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=16";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -319,23 +319,22 @@ function cardHTML(layerId, f) {
   const type = layerId === "canali" ? (p.naviglio ? "naviglio" : "roggia") : TYPE_OF[layerId];
   const head = `<div class="type">${swatch(byId[layerId])}${esc(t("card." + type))}</div>`;
   const [lon, lat] = f.geometry.type === "Point" ? f.geometry.coordinates : [state.clickLngLat.lng, state.clickLngLat.lat];
-  const dir = `<a class="btn" target="_blank" rel="noopener" href="https://www.google.com/maps/dir/?api=1&travelmode=walking&destination=${lat},${lon}">${esc(t("ui.directions"))}</a>`;
   const coords = `<div class="coords">${lat.toFixed(5)}° N · ${lon.toFixed(5)}° E</div>`;
   const where = [p.nil, p.municipio ? `${t("ui.municipio")} ${p.municipio}` : null].filter(Boolean).join(" · ");
   switch (layerId) {
     case "vedovelle":
-      return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.vedovellaText"))}</p><div class="actions">${dir}</div>${coords}`;
+      return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.vedovellaText"))}</p>${coords}`;
     case "case":
-      return `${head}<h3>${esc(p.nil || t("card.casa"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.casaText"))}</p><div class="actions">${dir}</div>${coords}`;
+      return `${head}<h3>${esc(p.nil || t("card.casa"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.casaText"))}</p>${coords}`;
     case "fontane": {
       const tags = [p.monumentale && t("card.monumentale"), p.storica && t("card.storica")].filter(Boolean).map((x) => `<span class="tag">${esc(x)}</span>`).join("");
       const more = p.url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(p.url)}">${esc(t("ui.more"))} ↗</a>` : "";
-      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${p.municipio ? esc(`${t("ui.municipio")} ${p.municipio}`) : ""}</p>${tags ? `<div class="tags">${tags}</div>` : ""}<div class="actions">${dir}${more}</div>${coords}`;
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${p.municipio ? esc(`${t("ui.municipio")} ${p.municipio}`) : ""}</p>${tags ? `<div class="tags">${tags}</div>` : ""}${more ? `<div class="actions">${more}</div>` : ""}${coords}`;
     }
     case "piscine": {
       const open = p.stato === "attiva";
       const tag = `<span class="tag ${open ? "" : "tag-off"}">${esc(t(open ? "card.piscinaAperta" : "card.piscinaChiusa"))}</span>`;
-      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc([p.indirizzo, p.nil].filter(Boolean).join(" · "))}</p><div class="tags">${tag}</div><p class="text">${esc(t("card.piscinaText"))}</p><div class="actions">${dir}</div>${coords}`;
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc([p.indirizzo, p.nil].filter(Boolean).join(" · "))}</p><div class="tags">${tag}</div><p class="text">${esc(t("card.piscinaText"))}</p>${coords}`;
     }
     case "fiumi":
     case "fontanili":
