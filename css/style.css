@@ -180,6 +180,17 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .card .tag { font: 500 11px var(--mono); padding: 3px 8px; border-radius: 999px; background: var(--water-soft); color: var(--water); }
 .card .actions { display: flex; gap: 8px; flex-wrap: wrap; }
 .card .actions .btn { padding: 7px 13px; font-size: 13px; }
+/* video della scheda: a tutta larghezza, in loop, un tocco per la pausa */
+.card-media { position: relative; margin: -4px 0 14px; border-radius: 10px; overflow: hidden; background: var(--paper); cursor: pointer; }
+.card-media video { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; }
+.media-toggle {
+  position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%;
+  background: color-mix(in srgb, var(--paper) 70%, transparent); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
+}
+.media-toggle::before { content: ""; position: absolute; inset: 0; margin: auto; width: 10px; height: 12px;
+  border-left: 3px solid var(--ink); border-right: 3px solid var(--ink); box-sizing: border-box; }
+.media-toggle[data-playing="false"]::before { width: 0; height: 0; border: 6px solid transparent; border-left: 10px solid var(--ink); border-right: 0; margin-left: 11px; }
+.card:has(.card-media) .card-close { z-index: 2; background: color-mix(in srgb, var(--paper) 70%, transparent); }
 .card .coords { font: 11px var(--mono); color: var(--ink-3); margin-top: 12px; }
 
 /* ---------- deriva ---------- */

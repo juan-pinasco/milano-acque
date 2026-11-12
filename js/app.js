@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=16";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=16";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=16";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=16";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=17";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=17";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=17";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=17";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -65,6 +65,8 @@ async function loadData() {
   files.confine = "data/confine.geojson";
   const entries = await Promise.all(Object.entries(files).map(async ([k, url]) => [k, await (await fetch(url)).json()]));
   state.data = Object.fromEntries(entries);
+  // foto e video delle schede (data/media.json): { livello: { id: { video, poster } } }
+  try { state.media = await (await fetch("data/media.json")).json(); } catch { state.media = {}; }
   for (const l of LAYERS) if (state.data[l.id]) state.counts[l.id] = state.data[l.id].features.length;
 }
 
@@ -321,6 +323,21 @@ function cardHTML(layerId, f) {
   const [lon, lat] = f.geometry.type === "Point" ? f.geometry.coordinates : [state.clickLngLat.lng, state.clickLngLat.lat];
   const coords = `<div class="coords">${lat.toFixed(5)}° N · ${lon.toFixed(5)}° E</div>`;
   const where = [p.nil, p.municipio ? `${t("ui.municipio")} ${p.municipio}` : null].filter(Boolean).join(" · ");
+  return mediaHTML(layerId, p) + cardBody(layerId, p, head, where, coords);
+}
+
+// Video in loop e senza audio, come un'immagine in movimento; un tocco lo mette in pausa.
+function mediaHTML(layerId, p) {
+  const m = state.media?.[layerId]?.[p.id];
+  if (!m?.video) return "";
+  const motion = !reduceMotion;
+  return `<figure class="card-media">
+    <video src="${esc(m.video)}" ${m.poster ? `poster="${esc(m.poster)}"` : ""} muted loop playsinline preload="metadata" ${motion ? "autoplay" : ""}></video>
+    <button type="button" class="media-toggle" aria-label="${esc(t(motion ? "ui.pause" : "ui.play"))}" data-playing="${motion}"></button>
+  </figure>`;
+}
+
+function cardBody(layerId, p, head, where, coords) {
   switch (layerId) {
     case "vedovelle":
       return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.vedovellaText"))}</p>${coords}`;
@@ -361,6 +378,14 @@ function closeCard() {
   document.body.classList.remove("has-card");
 }
 $("#card-close").addEventListener("click", closeCard);
+$("#card").addEventListener("click", (e) => {
+  const fig = e.target.closest(".card-media");
+  if (!fig) return;
+  const video = $("video", fig), btn = $(".media-toggle", fig);
+  if (video.paused) video.play(); else video.pause();
+  btn.dataset.playing = String(!video.paused);
+  btn.setAttribute("aria-label", t(video.paused ? "ui.play" : "ui.pause"));
+});
 
 const tip = document.createElement("div");
 tip.className = "map-tip";

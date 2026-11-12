@@ -96,6 +96,9 @@ def main():
         dest.write_text(strip_versions((ROOT / f).read_text()))
     shutil.rmtree(OUT / "data", ignore_errors=True)  # niente file di dati vecchi
     shutil.copytree(ROOT / "data", OUT / "data")
+    shutil.rmtree(OUT / "media", ignore_errors=True)
+    if (ROOT / "media").exists():
+        shutil.copytree(ROOT / "media", OUT / "media")
     fetch_to(MAPLIBRE_CSS, OUT / "css/maplibre-gl.css")
 
     print("Caratteri delle etichette…")
