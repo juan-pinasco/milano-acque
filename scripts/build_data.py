@@ -127,11 +127,21 @@ def write(name, feats):
     print(f"  ✓ {name}: {len(feats)} elementi, {path.stat().st_size // 1024} KB")
 
 
+ROMAN = re.compile(r"^(?=[ivxlc]{2,}$)(xc|xl|l?x{0,3})(ix|iv|v?i{0,3})$")
+
+
 def titlecase(s):
+    """Dal MAIUSCOLO dei dataset a "Corso XXII Marzo": i numeri romani restano maiuscoli."""
     s = re.sub(r"\s+", " ", (s or "").strip())
     small = {"di", "del", "della", "dei", "delle", "de", "da", "e", "a", "al", "alla", "in", "o", "c/o"}
     words = s.lower().split(" ")
-    return " ".join(w if (i and w in small) else w[:1].upper() + w[1:] for i, w in enumerate(words))
+    def fmt(i, w):
+        if i and w in small:
+            return w
+        if ROMAN.match(w):
+            return w.upper()
+        return w[:1].upper() + w[1:]
+    return " ".join(fmt(i, w) for i, w in enumerate(words))
 
 
 # ---------- 1. l'acqua del territorio ----------
