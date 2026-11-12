@@ -10,5 +10,12 @@
       "poster": "media/vedovelle-v179.jpg",
       "audio": true
     }
+  },
+  "fontane": {
+    "f25": {
+      "video": "media/fontane-f25.mp4",
+      "poster": "media/fontane-f25.jpg",
+      "audio": true
+    }
   }
 }
