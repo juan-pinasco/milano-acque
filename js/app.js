@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=18";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=18";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=18";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=18";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=19";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=19";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=19";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=19";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -60,13 +60,18 @@ loader.className = "loader";
 loader.innerHTML = '<svg viewBox="0 0 32 32"><path d="M16 3C11 11 7 16 7 21a9 9 0 0 0 18 0c0-5-4-10-9-18z"/></svg>';
 document.body.append(loader);
 
+// I dati portano lo stesso numero di versione del codice (app.js?v=…), così il browser
+// non mescola file vecchi e nuovi dopo un aggiornamento.
+const VERSION = new URL(import.meta.url).searchParams.get("v");
+const fresh = (url) => (VERSION ? `${url}?v=${VERSION}` : url);
+
 async function loadData() {
   const files = Object.fromEntries(LAYERS.filter((l) => l.data).map((l) => [l.id, l.data]));
   files.confine = "data/confine.geojson";
-  const entries = await Promise.all(Object.entries(files).map(async ([k, url]) => [k, await (await fetch(url)).json()]));
+  const entries = await Promise.all(Object.entries(files).map(async ([k, url]) => [k, await (await fetch(fresh(url))).json()]));
   state.data = Object.fromEntries(entries);
   // foto e video delle schede (data/media.json): { livello: { id: { video, poster } } }
-  try { state.media = await (await fetch("data/media.json")).json(); } catch { state.media = {}; }
+  try { state.media = await (await fetch(fresh("data/media.json"))).json(); } catch { state.media = {}; }
   for (const l of LAYERS) if (state.data[l.id]) state.counts[l.id] = state.data[l.id].features.length;
 }
 
@@ -370,6 +375,9 @@ function openCard(layerId, f) {
   state.selected = { layerId, f };
   $("#card-body").innerHTML = cardHTML(layerId, f);
   $("#card").hidden = false;
+  // se il video non si carica, meglio nessun riquadro che un riquadro nero
+  const video = $("#card video");
+  video?.addEventListener("error", () => video.closest(".card-media")?.remove(), { once: true });
   document.body.classList.add("has-card");
 }
 function closeCard() {
