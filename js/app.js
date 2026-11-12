@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=24";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=24";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=24";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=24";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=25";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=25";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=25";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=25";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -349,9 +349,9 @@ function mediaHTML(layerId, p) {
 function cardBody(layerId, p, head, where, coords) {
   switch (layerId) {
     case "vedovelle":
-      return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.vedovellaText"))}</p>${coords}`;
+      return `${head}<h3>${esc(p.nil || t("card.vedovella"))}</h3><p class="meta">${esc(where)}</p>${coords}`;
     case "case":
-      return `${head}<h3>${esc(p.nil || t("card.casa"))}</h3><p class="meta">${esc(where)}</p><p class="text">${esc(t("card.casaText"))}</p>${coords}`;
+      return `${head}<h3>${esc(p.nil || t("card.casa"))}</h3><p class="meta">${esc(where)}</p>${coords}`;
     case "fontane": {
       const tags = [p.monumentale && t("card.monumentale"), p.storica && t("card.storica")].filter(Boolean).map((x) => `<span class="tag">${esc(x)}</span>`).join("");
       const more = p.url ? `<a class="btn" target="_blank" rel="noopener" href="${esc(p.url)}">${esc(t("ui.more"))} ↗</a>` : "";
@@ -369,7 +369,7 @@ function cardBody(layerId, p, head, where, coords) {
     case "laghi":
       return `${head}<h3>${esc(p.nome || p.parco || t("card.lago"))}</h3><p class="meta">${esc([p.nome ? p.parco : null, fmtArea(p.area_mq)].filter(Boolean).join(" · "))}</p><p class="text">${esc(t("desc.laghi"))}</p>`;
     case "memoria":
-      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc(p.anno)} · ${esc(t("ui.indicative"))}</p><p class="text">${esc(t("card.memoriaText"))}</p>`;
+      return `${head}<h3>${esc(p.nome)}</h3><p class="meta">${esc(p.anno)} · ${esc(t("ui.indicative"))}</p>`;
     default:
       return `${head}<h3>${esc(p.nome || t("ui.unnamed"))}</h3><p class="meta">${esc(t("desc." + layerId))}</p>`;
   }
@@ -396,6 +396,9 @@ function revealAboveCard(lngLat) {
 function closeCard() {
   state.selected = null;
   $("#card").hidden = true;
+  // fermare e togliere il video: una scheda nascosta continuerebbe a suonare
+  $("#card video")?.pause();
+  $("#card-body").innerHTML = "";
   document.body.classList.remove("has-card");
 }
 $("#card-close").addEventListener("click", closeCard);
