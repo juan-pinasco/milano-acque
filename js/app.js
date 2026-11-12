@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=21";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=21";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=21";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=21";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=22";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=22";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=22";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=22";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -340,7 +340,7 @@ function mediaHTML(layerId, p) {
   if (!m?.video) return "";
   const motion = !reduceMotion;
   return `<figure class="card-media">
-    <video src="${esc(m.video)}" ${m.poster ? `poster="${esc(m.poster)}"` : ""} muted loop playsinline preload="metadata" ${motion ? "autoplay" : ""}></video>
+    <video src="${esc(fresh(m.video))}" ${m.poster ? `poster="${esc(fresh(m.poster))}"` : ""} muted loop playsinline preload="metadata" ${motion ? "autoplay" : ""}></video>
     ${m.audio ? `<button type="button" class="media-sound" aria-label="${esc(t("ui.soundOn"))}" data-muted="true">${SOUND_ICON}</button>` : ""}
     <button type="button" class="media-toggle" aria-label="${esc(t(motion ? "ui.pause" : "ui.play"))}" data-playing="${motion}"></button>
   </figure>`;
