@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=20";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=20";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=20";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=20";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=21";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=21";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=21";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=21";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -331,13 +331,17 @@ function cardHTML(layerId, f) {
   return mediaHTML(layerId, p) + cardBody(layerId, p, head, where, coords);
 }
 
-// Video in loop e senza audio, come un'immagine in movimento; un tocco lo mette in pausa.
+// Video in loop, come un'immagine in movimento: parte senza audio (i browser non permettono
+// altro), un tocco lo mette in pausa e, se ha l'audio, il pulsante col parlante lo accende.
+const SOUND_ICON = `<svg viewBox="0 0 24 24" aria-hidden="true"><path class="spk" d="M4 9h4l5-4v14l-5-4H4z"/>
+  <path class="on" d="M16.5 8.5a5 5 0 0 1 0 7M19 6a8.5 8.5 0 0 1 0 12"/><path class="off" d="M16 9.5l5 5M21 9.5l-5 5"/></svg>`;
 function mediaHTML(layerId, p) {
   const m = state.media?.[layerId]?.[p.id];
   if (!m?.video) return "";
   const motion = !reduceMotion;
   return `<figure class="card-media">
     <video src="${esc(m.video)}" ${m.poster ? `poster="${esc(m.poster)}"` : ""} muted loop playsinline preload="metadata" ${motion ? "autoplay" : ""}></video>
+    ${m.audio ? `<button type="button" class="media-sound" aria-label="${esc(t("ui.soundOn"))}" data-muted="true">${SOUND_ICON}</button>` : ""}
     <button type="button" class="media-toggle" aria-label="${esc(t(motion ? "ui.pause" : "ui.play"))}" data-playing="${motion}"></button>
   </figure>`;
 }
@@ -390,7 +394,13 @@ $("#card").addEventListener("click", (e) => {
   const fig = e.target.closest(".card-media");
   if (!fig) return;
   const video = $("video", fig), btn = $(".media-toggle", fig);
-  if (video.paused) video.play(); else video.pause();
+  const sound = e.target.closest(".media-sound");
+  if (sound) {
+    video.muted = !video.muted;
+    if (!video.muted && video.paused) video.play();
+    sound.dataset.muted = String(video.muted);
+    sound.setAttribute("aria-label", t(video.muted ? "ui.soundOn" : "ui.soundOff"));
+  } else if (video.paused) video.play(); else video.pause();
   btn.dataset.playing = String(!video.paused);
   btn.setAttribute("aria-label", t(video.paused ? "ui.play" : "ui.pause"));
 });
