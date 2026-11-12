@@ -1,7 +1,7 @@
-import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=22";
-import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=22";
-import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=22";
-import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=22";
+import { LANGS, STORY, PROMPTS, makeT } from "./i18n.js?v=24";
+import { baseStyle, NIGHT, registerLocalBasemap } from "./basemap.js?v=24";
+import { LAYERS, GROUPS, COLORS, loadIcons, iconSvg } from "./layers.js?v=24";
+import { buildPool, generateDrift, driftGeoJSON } from "./deriva.js?v=24";
 
 const $ = (s, el = document) => el.querySelector(s);
 const $$ = (s, el = document) => [...el.querySelectorAll(s)];
@@ -384,6 +384,15 @@ function openCard(layerId, f) {
   video?.addEventListener("error", () => video.closest(".card-media")?.remove(), { once: true });
   document.body.classList.add("has-card");
 }
+// La scheda sta al centro (su mobile, in basso): la mappa scorre perché il punto
+// toccato resti visibile sopra di lei invece di finirle sotto.
+function revealAboveCard(lngLat) {
+  const rect = $("#card").getBoundingClientRect();
+  const top = $(".topbar").getBoundingClientRect().bottom;
+  const target = { x: window.innerWidth / 2, y: Math.max(top + 40, (top + rect.top) / 2) };
+  const pt = map.project(lngLat);
+  map.panBy([pt.x - target.x, pt.y - target.y], { duration: reduceMotion ? 0 : 500 });
+}
 function closeCard() {
   state.selected = null;
   $("#card").hidden = true;
@@ -422,8 +431,10 @@ function bindMapEvents() {
     if (state.mode === "story") return;
     const f = pick(e.point);
     state.clickLngLat = e.lngLat;
-    if (f) openCard(layerOfMapLayer[f.layer.id], f);
-    else closeCard();
+    if (f) {
+      openCard(layerOfMapLayer[f.layer.id], f);
+      revealAboveCard(f.geometry.type === "Point" ? f.geometry.coordinates : [e.lngLat.lng, e.lngLat.lat]);
+    } else closeCard();
   });
   const canHover = matchMedia("(hover: hover)").matches;
   map.on("mousemove", (e) => {

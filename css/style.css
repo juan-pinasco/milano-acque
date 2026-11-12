@@ -182,7 +182,8 @@ body:not([data-mode="story"]) .story-progress { display: none; }
 .card .actions .btn { padding: 7px 13px; font-size: 13px; }
 /* video della scheda: a tutta larghezza, in loop, un tocco per la pausa */
 .card-media { position: relative; margin: -4px 0 14px; border-radius: 10px; overflow: hidden; background: var(--paper); cursor: pointer; }
-.card-media video { display: block; width: 100%; height: auto; max-height: 260px; object-fit: cover; }
+/* altezza fissa: la scheda ha subito la sua misura finale, prima che il video si carichi */
+.card-media video { display: block; width: 100%; height: 220px; object-fit: cover; }
 .media-toggle {
   position: absolute; right: 8px; bottom: 8px; width: 30px; height: 30px; border: 0; border-radius: 50%;
   background: color-mix(in srgb, var(--paper) 70%, transparent); backdrop-filter: blur(4px); -webkit-backdrop-filter: blur(4px);
@@ -318,7 +319,11 @@ body:not([data-mode="story"]) .story-progress { display: none; }
   }
   #explore.is-open .group { margin-bottom: 4px; }
   /* la scheda di un punto va in alto a sinistra, dove non copre la barra */
-  .card { top: 16px; left: 16px; right: auto; bottom: auto; max-height: calc(100vh - 140px); overflow-y: auto; }
+  /* la scheda al centro dello schermo, tra i comandi in alto e la barra dei livelli */
+  .card {
+    top: 90px; bottom: 120px; left: 0; right: 0; margin: auto; height: fit-content;
+    width: 380px; max-height: calc(100vh - 210px); overflow-y: auto;
+  }
 }
 
 /* ---------- mobile ---------- */
